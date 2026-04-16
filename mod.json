@@ -7,11 +7,15 @@
 		"ios": "2.2081"
 	},
 	"id": "hpesoj5.100-lives-challenge",
-	"name": "100 Lives Challenge",
+	"name": "Recent Tab Challenge",
 	"version": "v1.0.0",
 	"developer": "hpesoj5",
 	"description": "Menu for the 100 Lives Recent Tab Challenge",
+    "links": {
+        "source": "https://github.com/hpesoj5/100-lives-challenge.git"
+    },
 	"dependencies": {
 		"geode.node-ids": ">=v1.23.3"
-	}
+	},
+    "tags": ["online", "interface", "content"]
 }
