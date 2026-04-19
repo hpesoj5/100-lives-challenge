@@ -25,7 +25,11 @@ public:
         return *this;
     }
     MenuBuilder& contentWidth(float width) {
-        m_menu->setContentHeight(width);
+        m_menu->setContentWidth(width);
+        return *this;
+    }
+    MenuBuilder& contentSize(CCSize const& size) {
+        m_menu->setContentSize(size);
         return *this;
     }
     MenuBuilder& ID(std::string const& id) {
@@ -52,12 +56,23 @@ public:
         return *this;
     }
 
+    MenuBuilder& ignoreAnchorPointForPosition(bool ignore) {
+        m_menu->ignoreAnchorPointForPosition(ignore);
+        return *this;
+    }
+
+    MenuBuilder& keypad(bool enabled) {
+        m_menu->setKeypadEnabled(enabled);
+        return *this;
+    }
 
     void removeAllChildren() { m_menu->removeAllChildren(); }
     void updateLayout() { m_menu->updateLayout(); }
     CCPoint getPosition() const { return m_menu->getPosition(); }
     float getContentWidth() const { return m_menu->getContentWidth(); }
     float getContentHeight() const { return m_menu->getContentHeight(); }
+    CCMenu* build() { return m_menu;}
+    int getZOrder() const { return m_zOrder; }
 
 private:
     CCMenu* m_menu;

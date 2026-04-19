@@ -1,6 +1,5 @@
 #include "ChallengeLayer.hpp"
 #include "Constants.hpp"
-#include <Geode/binding/BoomScrollLayer.hpp>
 
 ChallengeLayer* ChallengeLayer::create() {
     auto challengeLayer { new ChallengeLayer };
@@ -24,7 +23,7 @@ bool ChallengeLayer::init() {
     auto winSize { CCDirector::sharedDirector()->getWinSize() };
 
     auto background { createLayerBG() };
-    this->addChild(background, -2);
+    addChild(background, -2);
 
     m_exitMenuBuilder
         .layout(ColumnLayout::create())
@@ -33,21 +32,14 @@ bool ChallengeLayer::init() {
         .zOrder(1)
         .parent(this);
     
-    m_mainMenuBuilder
-        .layout(RowLayout::create())
-        .anchor(0.5f, 0.5f)
-        .position(winSize.width / 2.f, winSize.height * 0.4f)
-        .ID("main-menu")
-        .zOrder(1)
-        .parent(this);
-
     m_actionMenuBuilder
         .layout(RowLayout::create())
         .anchor(0.5f, 0.5f)
-        .position(winSize.width / 2.f, winSize.height * 0.2f)
+        .position(winSize.width / 2.f, winSize.height * Constants::Menu::ACTION_MENU_POSITION_PERCENT)
         .ID("action-menu")
         .zOrder(1)
         .parent(this);
+
 
     auto backButton { CCMenuItemSpriteExtra::create(
         CCSprite::createWithSpriteFrameName("GJ_arrow_03_001.png"),
@@ -55,20 +47,42 @@ bool ChallengeLayer::init() {
         menu_selector(ChallengeLayer::onExitToMenu)
     ) };
     backButton->setID("back-button");
+    m_exitMenuBuilder.child(backButton, 0);
 
-    auto newChallengeSprite { ButtonSprite::create("New Challenge") };
+
     auto newChallengeBtn { CCMenuItemSpriteExtra::create(
-        newChallengeSprite,
+        ButtonSprite::create("New Challenge"),
         this,
         menu_selector(ChallengeLayer::onNewChallenge)
     ) };
     newChallengeBtn->setID("new-challenge-button");
-
-    drawLevels(false);
-
-    m_exitMenuBuilder.child(backButton, 0);
     m_actionMenuBuilder.child(newChallengeBtn, 0);
 
+
+    auto pages { CCArray::createWithCapacity(Constants::Challenge::NUM_PAGES) };
+
+    for (auto i { 0uz }; i < Constants::Challenge::NUM_PAGES; ++i) {
+        auto page { CCLayer::create() };
+        MenuBuilder mainMenu;
+        mainMenu
+            .contentSize(winSize)
+            .anchor(0.5f, 0.5f)
+            .ID(Constants::Menu::MAIN_MENU_PREFIX + std::to_string(i))
+            .position(0.f, 0.f)
+            .zOrder(1)
+            .parent(page);
+
+        pages->addObject(page);
+    }
+
+    m_scrollLayer = BoomScrollLayer::create(pages, 0, false);
+
+    m_scrollLayer->setPagesIndicatorPosition({ winSize.width / 2.f, winSize.height * Constants::Menu::PAGES_INDICATOR_POSITION_PERCENT });
+    m_scrollLayer->setKeypadEnabled(false);
+
+    drawLevels(false);
+    addChild(m_scrollLayer, -1);
+    
     return true;
 }
 
@@ -94,8 +108,30 @@ void ChallengeLayer::onExitToMenu(CCObject*) {
     CCDirector::sharedDirector()->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade);
 }
 
+// doesn't work on its own for some reason, so added case to keyDown
 void ChallengeLayer::keyBackClicked() {
     onExitToMenu(nullptr);
+}
+
+// taken from undefined068655, which is taken from LevelSelectLayer
+void ChallengeLayer::changePage(int page) {
+    if (m_scrollLayer->m_pageMoving) {
+        m_scrollLayer->m_pageMoving = false;
+        m_scrollLayer->m_extendedLayer->stopActionByTag(2);
+        m_scrollLayer->m_extendedLayer->setPosition(m_scrollLayer->m_position);
+        m_scrollLayer->moveToPageEnded();
+    }
+    m_scrollLayer->moveToPage(page);
+}
+
+void ChallengeLayer::keyDown(enumKeyCodes key, double) {
+    if (key == enumKeyCodes::KEY_Left || key == enumKeyCodes::KEY_ArrowLeft || key == enumKeyCodes::CONTROLLER_Left || key == enumKeyCodes::CONTROLLER_LTHUMBSTICK_LEFT) {
+        changePage(m_scrollLayer->m_page - 1);
+    }
+    else if (key == enumKeyCodes::KEY_Right || key == enumKeyCodes::KEY_ArrowRight || key == enumKeyCodes::CONTROLLER_Right || key == enumKeyCodes::CONTROLLER_LTHUMBSTICK_RIGHT) {
+        changePage(m_scrollLayer->m_page + 1);
+    }
+    else if (key == enumKeyCodes::KEY_Escape || key == enumKeyCodes::CONTROLLER_B) keyBackClicked();
 }
 
 void ChallengeLayer::onNewChallenge(CCObject*) {
@@ -107,65 +143,76 @@ void ChallengeLayer::onNewChallenge(CCObject*) {
             if (btn2) {
                 m_levelManager.get().clear();
                 m_levelManager.get().reserve(Constants::Challenge::NUM_LEVELS);
-                m_levelManager.loadLevels(this);
+                m_levelManager.loadLevels(this, 0);
             }
         }
     );
 }
 
 void ChallengeLayer::onLoadLevelsFinished() {
-    m_mainMenuBuilder.removeAllChildren();
-    log::debug("Number of levels (onNewChallenge): {}", m_levelManager.count());
-    // auto levelBtn { CCMenuItemSpriteExtra::create(
-    //     CCSprite::createWithSpriteFrameName("worldLevelBtn_001.png"),
-    //     this,
-    //     menu_selector(ChallengeLayer::onEnterLevel)
-    // ) };
-    // levelBtn->setID("level-button0");
-    // levelBtn->setTag(0);
-    // m_mainMenuBuilder.child(levelBtn, 0);
+    for (auto i { 0uz }; i < m_levelManager.count(); ++i) {
+        log::debug("Level {}: {}", i, m_levelManager.getLevelName(i));
+    }
+
+    m_scrollLayer->instantMoveToPage(0);
+
     drawLevels(true);
 }
 
 void ChallengeLayer::onEnterLevel(CCObject* sender) {
     auto btn { static_cast<CCMenuItemSpriteExtra*>(sender) };
-    log::debug("Number of levels on button press: {}", m_levelManager.count());
-    log::debug("Level: {}", m_levelManager.getLevel(btn->getTag()));
+
     CCDirector::sharedDirector()->pushScene(CCTransitionFade::create(0.5f, LevelInfoLayer::scene(m_levelManager.getLevel(btn->getTag()), false)));
 }
 
 void ChallengeLayer::drawLevels(bool levelsLoaded) {
-    m_mainMenuBuilder.removeAllChildren();
-    auto size { m_levelManager.count() };
-    for (auto i { 0uz }; i < 1; ++i)
+    auto size { Constants::Challenge::NUM_LEVELS };
+
+    for (auto i { 0uz }; i < Constants::Challenge::NUM_PAGES; ++i) {
+        m_scrollLayer->getPage(i)->getChildByID(Constants::Menu::MAIN_MENU_PREFIX + std::to_string(i))->removeAllChildren();
+    }
+
+    CCMenu* mainMenu {};
+
+    for (auto i { 0uz }; i < size; ++i)
     {
+        auto page { i / 5 };
+
+        // Reseat mainMenu to the correct page
+        if (i % 5 == 0) mainMenu = static_cast<CCMenu*>(m_scrollLayer->getPage(page)->getChildByID(Constants::Menu::MAIN_MENU_PREFIX + std::to_string(page)));
+
         auto levelBtn { CCMenuItemSpriteExtra::create(
-            CCSprite::createWithSpriteFrameName(levelsLoaded ? "worldLevelBtn_001.png" : "worldLevelBtn_locked_001.png"),
+            CCSprite::createWithSpriteFrameName(levelsLoaded && i <= m_dataManager.getCompletedLevels() ? "worldLevelBtn_001.png" : "worldLevelBtn_locked_001.png"),
             this,
             (levelsLoaded ? menu_selector(ChallengeLayer::onEnterLevel) : nullptr)
         ) };
-        std::string ID { "level-button-" + std::to_string(i) };
+
+        std::string ID { Constants::Menu::LEVEL_BTN_PREFIX + std::to_string(page) + '-' + std::to_string(i) };
+
         levelBtn->setID(ID);
         levelBtn->setTag(i);
-        m_mainMenuBuilder.child_fast(levelBtn, 0);
-        float posX { m_mainMenuBuilder.getContentWidth() * (0.5f + i * Constants::Menu::LEVEL_SPACING_PERCENT) };
-        float posY { m_mainMenuBuilder.getContentHeight() / 2.f };
-        levelBtn->setPosition(posX, posY);
-        levelBtn->setAnchorPoint({ 0.5f, 0.f });
+        auto contentSize { mainMenu->getContentSize() };
+        levelBtn->setPosition(contentSize.width * Constants::Menu::LEVEL_BTN_POSITION[(i / 5) % 2][i % 5].x, contentSize.height * Constants::Menu::LEVEL_BTN_POSITION[(i / 5) % 2][i % 5].y);
+        mainMenu->addChild(levelBtn, 5);
 
-        if (levelsLoaded) {
-            log::debug("Level Name: {}", m_levelManager.getLevelName(i));
+        if (levelsLoaded && i <= m_dataManager.getCompletedLevels()) {
             std::string const& levelName { m_levelManager.getLevelName(i) };
+
             auto levelLabel { CCLabelBMFont::create(
                 levelName.c_str(),
                 "bigFont.fnt"
             ) };
+
             levelLabel->setScale(levelName.size() > Constants::Menu::LABEL_THRESHOLD ? Constants::Menu::LABEL_SCALE_SMALL : Constants::Menu::LABEL_SCALE_BIG);
-            levelLabel->setID("level-label-" + std::to_string(i));
+            levelLabel->setID(Constants::Menu::LEVEL_LABEL_PREFIX + std::to_string(page) + '-' + std::to_string(i));
             levelLabel->setPosition(levelBtn->getContentWidth() / 2.f, levelBtn->getContentHeight() * (1.f + Constants::Menu::LEVEL_LABEL_SPACING_PERCENT));
+
             levelBtn->addChild(levelLabel);
         }
         else levelBtn->setEnabled(false);
+
     }
-    m_mainMenuBuilder.updateLayout();
+    for (auto i { 0uz }; i < Constants::Challenge::NUM_PAGES; ++i) {
+        m_scrollLayer->getPage(i)->getChildByID(Constants::Menu::MAIN_MENU_PREFIX + std::to_string(i))->updateLayout();
+    }
 }

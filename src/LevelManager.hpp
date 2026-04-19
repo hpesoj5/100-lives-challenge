@@ -10,7 +10,7 @@ public:
     ChallengeLevelManager();
     ~ChallengeLevelManager();
 
-    void loadLevels(CCObject* sender);
+    void loadLevels(CCObject* sender, int page);
     void loadLevelsFinished(cocos2d::CCArray* levels, char const* key) override;
     void loadLevelsFailed(char const* key) override;
     GJGameLevel* getLevel(size_t index);
@@ -22,5 +22,5 @@ public:
 private:
     std::vector<Ref<GJGameLevel>> m_levels;
     CCObject* m_sender;
-    int m_page;
+    int m_pageCount;
 };
