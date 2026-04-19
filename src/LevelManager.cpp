@@ -37,9 +37,9 @@ void ChallengeLevelManager::loadLevelsFailed(char const* key) {
 }
 
 GJGameLevel* ChallengeLevelManager::getLevel(size_t index) {
-    return m_levels.at(index).data();
+    return m_levels[index].data();
 }
 
 std::string const& ChallengeLevelManager::getLevelName(size_t index) const {
-    return m_levels.at(index)->m_levelName;
+    return m_levels[index]->m_levelName;
 }
