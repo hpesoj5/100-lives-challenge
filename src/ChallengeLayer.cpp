@@ -11,6 +11,12 @@ ChallengeLayer* ChallengeLayer::create() {
     return nullptr;
 }
 
+ChallengeLayer::~ChallengeLayer() {
+    // add a reset button to clear save in the future
+
+    if (m_saveExists) m_dataManager.saveToDisk();
+}
+
 bool ChallengeLayer::init() {
     if (!CCLayer::init()) {
         log::error("Failed to initialise CCLayer");
@@ -19,6 +25,7 @@ bool ChallengeLayer::init() {
 
     CCTextureCache::sharedTextureCache()->addImage("WorldSheet.png", false);
     CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile("WorldSheet.plist");
+    m_dataManager.setChallengeLayer(this);
 
     auto winSize { CCDirector::sharedDirector()->getWinSize() };
 
@@ -31,7 +38,7 @@ bool ChallengeLayer::init() {
         .ID("exit-menu")
         .zOrder(1)
         .parent(this);
-    
+
     m_actionMenuBuilder
         .layout(RowLayout::create())
         .anchor(0.5f, 0.5f)
@@ -82,13 +89,18 @@ bool ChallengeLayer::init() {
 
     drawLevels(false);
     addChild(m_scrollLayer, -1);
-    
+    m_dataManager.restoreFromDisk();
+
     return true;
+}
+
+void ChallengeLayer::onLevelsRestored(bool restored) {
+    drawLevels(restored);
 }
 
 void ChallengeLayer::onEnter() {
     CCLayer::onEnter();
-    
+
     setTouchEnabled(true);
     setKeyboardEnabled(true);
     setKeypadEnabled(true);
@@ -141,28 +153,28 @@ void ChallengeLayer::onNewChallenge(CCObject*) {
         "NO", "YES",
         [this](auto, bool btn2) {
             if (btn2) {
-                m_levelManager.get().clear();
-                m_levelManager.get().reserve(Constants::Challenge::NUM_LEVELS);
-                m_levelManager.loadLevels(this, 0);
+                m_dataManager.get().clear();
+                m_dataManager.get().reserve(Constants::Challenge::NUM_LEVELS);
+                m_dataManager.loadLevels(this, 0);
             }
         }
     );
 }
 
 void ChallengeLayer::onLoadLevelsFinished() {
-    for (auto i { 0uz }; i < m_levelManager.count(); ++i) {
-        log::debug("Level {}: {}", i, m_levelManager.getLevelName(i));
+    for (auto i { 0uz }; i < m_dataManager.count(); ++i) {
+        log::debug("Level {}: {}", i, m_dataManager.getLevelName(i));
     }
 
     m_scrollLayer->instantMoveToPage(0);
-
+    m_saveExists = true;
     drawLevels(true);
 }
 
 void ChallengeLayer::onEnterLevel(CCObject* sender) {
     auto btn { static_cast<CCMenuItemSpriteExtra*>(sender) };
 
-    CCDirector::sharedDirector()->pushScene(CCTransitionFade::create(0.5f, LevelInfoLayer::scene(m_levelManager.getLevel(btn->getTag()), false)));
+    CCDirector::sharedDirector()->pushScene(CCTransitionFade::create(0.5f, LevelInfoLayer::scene(m_dataManager.getLevel(btn->getTag()), false)));
 }
 
 void ChallengeLayer::drawLevels(bool levelsLoaded) {
@@ -196,7 +208,7 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
         mainMenu->addChild(levelBtn, 5);
 
         if (levelsLoaded && i <= m_dataManager.getCompletedLevels()) {
-            std::string const& levelName { m_levelManager.getLevelName(i) };
+            std::string const& levelName { m_dataManager.getLevelName(i) };
 
             auto levelLabel { CCLabelBMFont::create(
                 levelName.c_str(),

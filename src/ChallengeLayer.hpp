@@ -1,7 +1,6 @@
 #pragma once
 
 #include "DataManager.hpp"
-#include "LevelManager.hpp"
 #include "MenuBuilder.hpp"
 #include <Geode/Geode.hpp>
 
@@ -22,16 +21,18 @@ public:
     void onNewChallenge(CCObject*);
     void onLoadLevelsFinished();
     void onEnterLevel(CCObject* sender);
+    void onLevelsRestored(bool restored);
     void drawLevels(bool levelsLoaded);
-
 
 private:
     ChallengeLayer() = default;
+    ~ChallengeLayer();
 
     BoomScrollLayer* m_scrollLayer;
-    ChallengeLevelManager m_levelManager;
     DataManager m_dataManager;
 
     MenuBuilder m_actionMenuBuilder;
     MenuBuilder m_exitMenuBuilder;
+
+    bool m_saveExists;
 };
