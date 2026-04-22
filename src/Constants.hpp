@@ -1,3 +1,5 @@
+#pragma once
+
 #include <array>
 #include <string>
 
@@ -12,13 +14,13 @@ namespace Constants {
         inline constexpr std::string MAIN_MENU_PREFIX { "main-menu-page-"s };
         inline constexpr std::string LEVEL_BTN_PREFIX { "level-button-"s };
         inline constexpr std::string LEVEL_LABEL_PREFIX { "level-label-"s };
-        
+
         inline constexpr float ACTION_MENU_POSITION_PERCENT { 0.2f };
 
         inline constexpr float EXIT_PADDING { 24.f };
         inline constexpr float EXIT_HEIGHT { 125.f };
 
-        inline constexpr float LEVEL_SPACING_PERCENT { 0.1f };
+        inline constexpr float LEVEL_SPACING_PERCENT { 0.15f };
         inline constexpr float LEVEL_LABEL_SPACING_PERCENT { 0.2f };  // as a percentage of the button's content height
         inline constexpr float LABEL_SCALE_BIG { 0.4f };
         inline constexpr float LABEL_SCALE_SMALL { 0.2f };
@@ -28,22 +30,22 @@ namespace Constants {
 
         inline constexpr std::array<std::array<Point, 5>, 2> LEVEL_BTN_POSITION {
             std::array<Point, 5>{
-                Point{ 0.1f, 0.4f },
-                Point{ 0.3f, 0.4f },
+                Point{ 0.5f - 2 * LEVEL_SPACING_PERCENT, 0.4f },
+                Point{ 0.5f - LEVEL_SPACING_PERCENT, 0.4f },
                 Point{ 0.5f, 0.4f },
-                Point{ 0.7f, 0.4f },
-                Point{ 0.9f, 0.4f },
+                Point{ 0.5f + LEVEL_SPACING_PERCENT, 0.4f },
+                Point{ 0.5f + 2 * LEVEL_SPACING_PERCENT, 0.4f },
             },
             std::array<Point, 5>{
-                Point{ 0.1f, 0.4f },
-                Point{ 0.3f, 0.4f },
+                Point{ 0.5f - 2 * LEVEL_SPACING_PERCENT, 0.4f },
+                Point{ 0.5f - LEVEL_SPACING_PERCENT, 0.4f },
                 Point{ 0.5f, 0.4f },
-                Point{ 0.7f, 0.4f },
-                Point{ 0.9f, 0.4f },
+                Point{ 0.5f + LEVEL_SPACING_PERCENT, 0.4f },
+                Point{ 0.5f + 2 * LEVEL_SPACING_PERCENT, 0.4f },
             },
         };
     }
-    
+
     namespace Challenge {
         inline constexpr uint32_t NUM_LEVELS { 100 };
         inline constexpr size_t NUM_PAGES { 20 };

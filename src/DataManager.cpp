@@ -1,6 +1,7 @@
 #include "ChallengeLayer.hpp"
 #include "Constants.hpp"
 #include "DataManager.hpp"
+#include <algorithm>
 
 DataManager::DataManager() : m_sender {}, m_challengeLayer {}, m_pageCount {} {
     m_prevLMD = this;
@@ -34,7 +35,12 @@ void DataManager::loadLevelsFinished(cocos2d::CCArray* levels, char const* key) 
         );
     }
     if (m_levels.size() < Constants::Challenge::NUM_LEVELS) loadLevels(m_sender, m_pageCount + 1);
-    else static_cast<ChallengeLayer*>(m_sender)->onLoadLevelsFinished();
+    else {
+        m_data.levelStatus.resize(Constants::Challenge::NUM_LEVELS, static_cast<int>(LevelStatus::locked));
+        log::debug("Level Status: {}", m_data.levelStatus);
+        m_data.levelStatus.front() = static_cast<int>(LevelStatus::inProgress);
+        static_cast<ChallengeLayer*>(m_sender)->onLoadLevelsFinished();
+    }
 }
 
 void DataManager::loadLevelsFailed(char const* key) {
@@ -68,7 +74,7 @@ void DataManager::restoreFromDisk() {
         auto level { m_data.levels[i] };
         auto savedLevel { GameLevelManager::sharedState()->getSavedLevel(level) };
 
-        log::debug("Level{}exists:{},CN:{}", i, static_cast<bool>(savedLevel), (savedLevel ? !savedLevel->m_creatorName.empty() : false));
+        // log::debug("Level{}exists:{},CN:{}", i, static_cast<bool>(savedLevel), (savedLevel ? !savedLevel->m_creatorName.empty() : false));
 
         if (savedLevel && !savedLevel->m_creatorName.empty()) m_levels.push_back(Ref<GJGameLevel>(savedLevel));
         else {
@@ -83,7 +89,7 @@ void DataManager::restoreFromDisk() {
 
 void DataManager::levelDownloadFinished(GJGameLevel* level) {
     if (!m_levelsToDownload.contains(level->m_levelID)) return;
-    log::debug("Level download successful. ID: {}", level->m_levelID);
+    // log::debug("Level download successful. ID: {}", level->m_levelID);
     m_levels[m_levelsToDownload[level->m_levelID]] = level;
     m_levelsToDownload.erase(level->m_levelID);
 
@@ -101,4 +107,16 @@ void DataManager::levelDownloadFailed(int response) {
 
 void DataManager::notifyLevelsRestored(bool restored) const {
     static_cast<ChallengeLayer*>(m_challengeLayer)->onLevelsRestored(restored);
+}
+
+void DataManager::setLevelComplete(size_t n) {
+    int nInt { static_cast<int>(n) };
+    log::debug("n: {}", n);
+    log::debug("Level Status: {}", m_data.levelStatus);
+    m_data.levelStatus[n] = static_cast<int>(LevelStatus::completed);
+    m_data.completedLevels = std::max(m_data.completedLevels, nInt + 1);
+    if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
+        m_data.levelStatus[static_cast<size_t>(m_data.completedLevels)] = static_cast<int>(LevelStatus::inProgress);
+        static_cast<ChallengeLayer*>(m_challengeLayer)->unlockButton(static_cast<size_t>(m_data.completedLevels));
+    }
 }

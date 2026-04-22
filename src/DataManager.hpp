@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Constants.hpp"
 #include <Geode/Geode.hpp>
 #include <vector>
 
@@ -19,8 +20,8 @@ inline constexpr LevelStatus intToLevelStatus(int x) {
 }
 
 struct SaveData {
-    std::vector<int> levels {};
-    std::vector<int> levelStatus {};
+    std::vector<int> levels { std::vector<int>(Constants::Challenge::NUM_LEVELS) };
+    std::vector<int> levelStatus { std::vector<int>(Constants::Challenge::NUM_LEVELS, static_cast<int>(LevelStatus::locked)) };
     int completedLevels {};
     int lives {};
     int skips {};
@@ -82,6 +83,8 @@ public:
     void notifyLevelsRestored(bool restored) const;
 
     void setChallengeLayer(CCObject* challengeLayer) { m_challengeLayer = challengeLayer; }
+
+    void setLevelComplete(size_t n);
 
 private:
     SaveData m_data;

@@ -162,9 +162,9 @@ void ChallengeLayer::onNewChallenge(CCObject*) {
 }
 
 void ChallengeLayer::onLoadLevelsFinished() {
-    for (auto i { 0uz }; i < m_dataManager.count(); ++i) {
-        log::debug("Level {}: {}", i, m_dataManager.getLevelName(i));
-    }
+    // for (auto i { 0uz }; i < m_dataManager.count(); ++i) {
+    //     log::debug("Level {}: {}", i, m_dataManager.getLevelName(i));
+    // }
 
     m_scrollLayer->instantMoveToPage(0);
     m_saveExists = true;
@@ -192,6 +192,7 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
 
         // Reseat mainMenu to the correct page
         if (i % 5 == 0) mainMenu = static_cast<CCMenu*>(m_scrollLayer->getPage(page)->getChildByID(Constants::Menu::MAIN_MENU_PREFIX + std::to_string(page)));
+        auto contentSize { mainMenu->getContentSize() };
 
         auto levelBtn { CCMenuItemSpriteExtra::create(
             CCSprite::createWithSpriteFrameName(levelsLoaded && i <= m_dataManager.getCompletedLevels() ? "worldLevelBtn_001.png" : "worldLevelBtn_locked_001.png"),
@@ -199,12 +200,10 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
             (levelsLoaded ? menu_selector(ChallengeLayer::onEnterLevel) : nullptr)
         ) };
 
-        std::string ID { Constants::Menu::LEVEL_BTN_PREFIX + std::to_string(page) + '-' + std::to_string(i) };
-
-        levelBtn->setID(ID);
+        levelBtn->setID(Constants::Menu::LEVEL_BTN_PREFIX + std::to_string(i));
         levelBtn->setTag(i);
-        auto contentSize { mainMenu->getContentSize() };
         levelBtn->setPosition(contentSize.width * Constants::Menu::LEVEL_BTN_POSITION[(i / 5) % 2][i % 5].x, contentSize.height * Constants::Menu::LEVEL_BTN_POSITION[(i / 5) % 2][i % 5].y);
+
         mainMenu->addChild(levelBtn, 5);
 
         if (levelsLoaded && i <= m_dataManager.getCompletedLevels()) {
@@ -216,7 +215,7 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
             ) };
 
             levelLabel->setScale(levelName.size() > Constants::Menu::LABEL_THRESHOLD ? Constants::Menu::LABEL_SCALE_SMALL : Constants::Menu::LABEL_SCALE_BIG);
-            levelLabel->setID(Constants::Menu::LEVEL_LABEL_PREFIX + std::to_string(page) + '-' + std::to_string(i));
+            levelLabel->setID(Constants::Menu::LEVEL_LABEL_PREFIX + std::to_string(i));
             levelLabel->setPosition(levelBtn->getContentWidth() / 2.f, levelBtn->getContentHeight() * (1.f + Constants::Menu::LEVEL_LABEL_SPACING_PERCENT));
 
             levelBtn->addChild(levelLabel);
@@ -227,4 +226,37 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
     for (auto i { 0uz }; i < Constants::Challenge::NUM_PAGES; ++i) {
         m_scrollLayer->getPage(i)->getChildByID(Constants::Menu::MAIN_MENU_PREFIX + std::to_string(i))->updateLayout();
     }
+}
+
+void ChallengeLayer::unlockButton(size_t n) {
+    std::string ID { Constants::Menu::LEVEL_BTN_PREFIX + std::to_string(n) };
+    auto page { n / 5 };
+    std::string pageID { Constants::Menu::MAIN_MENU_PREFIX + std::to_string(page) };
+    auto position { m_scrollLayer->getPage(page)->getChildByID(pageID)->getChildByID(ID)->getPosition() };
+
+    auto levelBtn { CCMenuItemSpriteExtra::create(
+        CCSprite::createWithSpriteFrameName("worldLevelBtn_001.png"),
+        this,
+        menu_selector(ChallengeLayer::onEnterLevel)
+    ) };
+    levelBtn->setID(ID);
+    levelBtn->setTag(n);
+    levelBtn->setPosition(position);
+
+    m_scrollLayer->getPage(page)->getChildByID(pageID)->removeChildByID(ID);
+    m_scrollLayer->getPage(page)->getChildByID(pageID)->addChild(levelBtn, 5);
+
+    std::string const& levelName { m_dataManager.getLevelName(n) };
+
+    auto levelLabel { CCLabelBMFont::create(
+        levelName.c_str(),
+        "bigFont.fnt"
+    ) };
+
+    levelLabel->setScale(levelName.size() > Constants::Menu::LABEL_THRESHOLD ? Constants::Menu::LABEL_SCALE_SMALL : Constants::Menu::LABEL_SCALE_BIG);
+    levelLabel->setID(Constants::Menu::LEVEL_LABEL_PREFIX + std::to_string(n));
+    levelLabel->setPosition(levelBtn->getContentWidth() / 2.f, levelBtn->getContentHeight() * (1.f + Constants::Menu::LEVEL_LABEL_SPACING_PERCENT));
+
+    levelBtn->addChild(levelLabel);
+    m_scrollLayer->getPage(page)->getChildByID(pageID)->updateLayout();
 }

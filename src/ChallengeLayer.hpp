@@ -24,6 +24,8 @@ public:
     void onLevelsRestored(bool restored);
     void drawLevels(bool levelsLoaded);
 
+    void unlockButton(size_t n);
+
 private:
     ChallengeLayer() = default;
     ~ChallengeLayer();
