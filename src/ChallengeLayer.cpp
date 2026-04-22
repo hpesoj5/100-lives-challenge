@@ -1,5 +1,6 @@
 #include "ChallengeLayer.hpp"
 #include "Constants.hpp"
+#include "LevelInfoLayer.hpp"
 
 ChallengeLayer* ChallengeLayer::create() {
     auto challengeLayer { new ChallengeLayer };
@@ -144,6 +145,8 @@ void ChallengeLayer::keyDown(enumKeyCodes key, double) {
         changePage(m_scrollLayer->m_page + 1);
     }
     else if (key == enumKeyCodes::KEY_Escape || key == enumKeyCodes::CONTROLLER_B) keyBackClicked();
+    else if (key == enumKeyCodes::KEY_C) m_dataManager.setLevelComplete(m_dataManager.getCompletedLevels());
+    else if (key == enumKeyCodes::KEY_S) m_dataManager.setLevelSkipped(m_dataManager.getCompletedLevels());
 }
 
 void ChallengeLayer::onNewChallenge(CCObject*) {
@@ -153,6 +156,7 @@ void ChallengeLayer::onNewChallenge(CCObject*) {
         "NO", "YES",
         [this](auto, bool btn2) {
             if (btn2) {
+                m_dataManager.deleteAllLevels();
                 m_dataManager.get().clear();
                 m_dataManager.get().reserve(Constants::Challenge::NUM_LEVELS);
                 m_dataManager.loadLevels(this, 0);
@@ -162,10 +166,6 @@ void ChallengeLayer::onNewChallenge(CCObject*) {
 }
 
 void ChallengeLayer::onLoadLevelsFinished() {
-    // for (auto i { 0uz }; i < m_dataManager.count(); ++i) {
-    //     log::debug("Level {}: {}", i, m_dataManager.getLevelName(i));
-    // }
-
     m_scrollLayer->instantMoveToPage(0);
     m_saveExists = true;
     drawLevels(true);
@@ -174,7 +174,14 @@ void ChallengeLayer::onLoadLevelsFinished() {
 void ChallengeLayer::onEnterLevel(CCObject* sender) {
     auto btn { static_cast<CCMenuItemSpriteExtra*>(sender) };
 
-    CCDirector::sharedDirector()->pushScene(CCTransitionFade::create(0.5f, LevelInfoLayer::scene(m_dataManager.getLevel(btn->getTag()), false)));
+    CCDirector::sharedDirector()->pushScene(CCTransitionFade::create(0.5f, ChallengeLevelInfoLayer::scene(m_dataManager.getLevel(btn->getTag()), false, this, menu_selector(ChallengeLayer::onLevelSkip), btn->getTag(), this->m_dataManager.hasRemainingSkips())));
+}
+
+void ChallengeLayer::onLevelSkip(CCObject* sender) {
+    auto btn { static_cast<CCMenuItemSpriteExtra*>(sender) };
+    auto levelIndex { btn->getTag() };
+    m_dataManager.setLevelSkipped(levelIndex);
+    CCDirector::sharedDirector()->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade);
 }
 
 void ChallengeLayer::drawLevels(bool levelsLoaded) {
@@ -189,9 +196,8 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
     for (auto i { 0uz }; i < size; ++i)
     {
         auto page { i / 5 };
-
-        // Reseat mainMenu to the correct page
         if (i % 5 == 0) mainMenu = static_cast<CCMenu*>(m_scrollLayer->getPage(page)->getChildByID(Constants::Menu::MAIN_MENU_PREFIX + std::to_string(page)));
+
         auto contentSize { mainMenu->getContentSize() };
 
         auto levelBtn { CCMenuItemSpriteExtra::create(
@@ -232,6 +238,7 @@ void ChallengeLayer::unlockButton(size_t n) {
     std::string ID { Constants::Menu::LEVEL_BTN_PREFIX + std::to_string(n) };
     auto page { n / 5 };
     std::string pageID { Constants::Menu::MAIN_MENU_PREFIX + std::to_string(page) };
+
     auto position { m_scrollLayer->getPage(page)->getChildByID(pageID)->getChildByID(ID)->getPosition() };
 
     auto levelBtn { CCMenuItemSpriteExtra::create(

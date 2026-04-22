@@ -21,6 +21,7 @@ public:
     void onNewChallenge(CCObject*);
     void onLoadLevelsFinished();
     void onEnterLevel(CCObject* sender);
+    void onLevelSkip(CCObject* sender);
     void onLevelsRestored(bool restored);
     void drawLevels(bool levelsLoaded);
 

@@ -47,7 +47,9 @@ namespace Constants {
     }
 
     namespace Challenge {
-        inline constexpr uint32_t NUM_LEVELS { 100 };
+        inline constexpr int NUM_LEVELS { 100 };
         inline constexpr size_t NUM_PAGES { 20 };
+        inline constexpr int NUM_LIVES { 100 };
+        inline constexpr int NUM_SKIPS { 3 };
     }
 }
