@@ -55,7 +55,7 @@ struct matjson::Serialize<ChallengeData> {
 
 class DataManager final : public LevelManagerDelegate, public LevelDownloadDelegate {
 public:
-    DataManager();
+    static DataManager& get() { static DataManager dataManager; return dataManager; }
 
     void loadLevels(CCObject* sender, int page);
     void loadLevelsFinished(CCArray* levels, char const* key) override;
@@ -67,7 +67,7 @@ public:
     GJGameLevel* getLevel(size_t index) { return m_levels[index].data(); }
     std::string const& getLevelName(size_t index) const { return m_levels[index]->m_levelName; }
 
-    std::vector<Ref<GJGameLevel>>& get() { return m_levels; }
+    std::vector<Ref<GJGameLevel>>& getLevelVector() { return m_levels; }
     size_t count() const { return m_levels.size(); }
 
     int getCompletedLevels() const { return m_data.completedLevels; }
@@ -84,17 +84,16 @@ public:
     void restoreFromDisk();
     void notifyLevelsRestored(bool restored) const;
 
-    void setChallengeLayer(CCObject* challengeLayer) { m_challengeLayer = challengeLayer; }
-
     void setLevelComplete(size_t n);
     void setLevelSkipped(size_t n);
 
 private:
+    DataManager();
+
     ChallengeData m_data;
     std::unordered_map<int, int> m_levelsToDownload;
     std::vector<Ref<GJGameLevel>> m_levels;
     CCObject* m_sender;
-    CCObject* m_challengeLayer;
     int m_pageCount;
     int m_bestScore;
 };

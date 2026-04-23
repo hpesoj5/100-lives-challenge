@@ -1,6 +1,5 @@
 #pragma once
 
-#include "DataManager.hpp"
 #include "MenuBuilder.hpp"
 #include <Geode/Geode.hpp>
 
@@ -33,8 +32,6 @@ public:
 private:
     ChallengeLayer() = default;
     ~ChallengeLayer();
-
-    DataManager m_dataManager;
 
     MenuBuilder m_actionMenuBuilder;
     MenuBuilder m_exitMenuBuilder;

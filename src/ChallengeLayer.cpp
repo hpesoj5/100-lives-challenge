@@ -1,22 +1,24 @@
 #include "ChallengeLayer.hpp"
 #include "Constants.hpp"
+#include "DataManager.hpp"
 #include "Globals.hpp"
 #include "LevelInfoLayer.hpp"
 
 ChallengeLayer* ChallengeLayer::create() {
     auto challengeLayer { new ChallengeLayer };
+    Challenge::currentChallengeLayer = challengeLayer;
     if (challengeLayer && challengeLayer->init()) {
         challengeLayer->autorelease();
-        Challenge::currentChallengeLayer = challengeLayer;
         return challengeLayer;
     }
     CC_SAFE_DELETE(challengeLayer);
+    Challenge::currentChallengeLayer = nullptr;
     return nullptr;
 }
 
 ChallengeLayer::~ChallengeLayer() {
     Challenge::currentChallengeLayer = nullptr;
-    if (m_saveExists) m_dataManager.saveToDisk();
+    if (m_saveExists) DataManager::get().saveToDisk();
 }
 
 // add a reset button to clear save in the future
@@ -28,7 +30,6 @@ bool ChallengeLayer::init() {
 
     CCTextureCache::sharedTextureCache()->addImage("WorldSheet.png", false);
     CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile("WorldSheet.plist");
-    m_dataManager.setChallengeLayer(this);
 
     auto winSize { CCDirector::sharedDirector()->getWinSize() };
 
@@ -121,7 +122,7 @@ bool ChallengeLayer::init() {
 
     drawLevels(false);
     addChild(m_scrollLayer, -1);
-    m_dataManager.restoreFromDisk();
+    DataManager::get().restoreFromDisk();
 
     return true;
 }
@@ -135,8 +136,8 @@ void ChallengeLayer::onEnter() {
     setKeypadEnabled(true);
     setMouseEnabled(true);
 
-    m_prevLMD = &m_dataManager;
-    m_prevLDD = &m_dataManager;
+    m_prevLMD = &DataManager::get();
+    m_prevLDD = &DataManager::get();
     std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, m_prevLMD);
     std::swap(GameLevelManager::sharedState()->m_levelDownloadDelegate, m_prevLDD);
 }
@@ -163,7 +164,7 @@ void ChallengeLayer::keyDown(enumKeyCodes key, double) {
     }
     else if (key == enumKeyCodes::KEY_Escape || key == enumKeyCodes::CONTROLLER_B) keyBackClicked();
     // placeholder
-    else if (key == enumKeyCodes::KEY_C) m_dataManager.setLevelComplete(m_dataManager.getCompletedLevels());
+    else if (key == enumKeyCodes::KEY_C) DataManager::get().setLevelComplete(DataManager::get().getCompletedLevels());
 }
 
 // taken from undefined068655, which is taken from LevelSelectLayer
@@ -193,11 +194,11 @@ void ChallengeLayer::onNewChallenge(CCObject*) {
         [this](auto, bool btn2) {
             if (btn2) {
                 // try to delete previously saved levels
-                m_dataManager.deleteAllLevels();
-                m_dataManager.get().clear();
-                m_dataManager.get().reserve(Constants::Challenge::NUM_LEVELS);
+                DataManager::get().deleteAllLevels();
+                DataManager::get().getLevelVector().clear();
+                DataManager::get().getLevelVector().reserve(Constants::Challenge::NUM_LEVELS);
 
-                m_dataManager.loadLevels(this, 0);
+                DataManager::get().loadLevels(this, 0);
             }
         }
     );
@@ -218,15 +219,15 @@ void ChallengeLayer::onEnterLevel(CCObject* sender) {
 
     // not gonna make this prettier
     Challenge::currentLevelIndex = btn->getTag();
-    Challenge::skipButtonEnabled = m_dataManager.hasRemainingSkips();
-    CCDirector::sharedDirector()->pushScene(CCTransitionFade::create(0.5f, ChallengeLevelInfoLayer::scene(m_dataManager.getLevel(btn->getTag()), false)));
+    Challenge::skipButtonEnabled = DataManager::get().hasRemainingSkips();
+    CCDirector::sharedDirector()->pushScene(CCTransitionFade::create(0.5f, ChallengeLevelInfoLayer::scene(DataManager::get().getLevel(btn->getTag()), false)));
 }
 
 void ChallengeLayer::onLevelSkip(CCObject* sender) {
     auto btn { static_cast<CCMenuItemSpriteExtra*>(sender) };
     auto levelIndex { btn->getTag() };
 
-    m_dataManager.setLevelSkipped(levelIndex);
+    DataManager::get().setLevelSkipped(levelIndex);
     CCDirector::sharedDirector()->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade);
 }
 
@@ -247,7 +248,7 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
         auto contentSize { mainMenu->getContentSize() };
 
         auto levelBtn { CCMenuItemSpriteExtra::create(
-            CCSprite::createWithSpriteFrameName(levelsLoaded && i <= m_dataManager.getCompletedLevels() ? "worldLevelBtn_001.png" : "worldLevelBtn_locked_001.png"),
+            CCSprite::createWithSpriteFrameName(levelsLoaded && i <= DataManager::get().getCompletedLevels() ? "worldLevelBtn_001.png" : "worldLevelBtn_locked_001.png"),
             this,
             (levelsLoaded ? menu_selector(ChallengeLayer::onEnterLevel) : nullptr)
         ) };
@@ -258,8 +259,8 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
 
         mainMenu->addChild(levelBtn, 5);
 
-        if (levelsLoaded && i <= m_dataManager.getCompletedLevels()) {
-            std::string const& levelName { m_dataManager.getLevelName(i) };
+        if (levelsLoaded && i <= DataManager::get().getCompletedLevels()) {
+            std::string const& levelName { DataManager::get().getLevelName(i) };
 
             auto levelLabel { CCLabelBMFont::create(
                 levelName.c_str(),
@@ -275,6 +276,7 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
         else levelBtn->setEnabled(false);
 
     }
+
     for (auto i { 0uz }; i < Constants::Challenge::NUM_PAGES; ++i) {
         m_scrollLayer->getPage(i)->getChildByID(Constants::Menu::MAIN_MENU_PREFIX + std::to_string(i))->updateLayout();
     }
@@ -299,7 +301,7 @@ void ChallengeLayer::unlockButton(size_t n) {
     m_scrollLayer->getPage(page)->getChildByID(pageID)->removeChildByID(ID);
     m_scrollLayer->getPage(page)->getChildByID(pageID)->addChild(levelBtn, 5);
 
-    std::string const& levelName { m_dataManager.getLevelName(n) };
+    std::string const& levelName { DataManager::get().getLevelName(n) };
 
     auto levelLabel { CCLabelBMFont::create(
         levelName.c_str(),

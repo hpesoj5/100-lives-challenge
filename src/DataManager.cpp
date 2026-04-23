@@ -1,9 +1,10 @@
 #include "ChallengeLayer.hpp"
 #include "Constants.hpp"
 #include "DataManager.hpp"
+#include "Globals.hpp"
 #include <algorithm>
 
-DataManager::DataManager() : m_sender {}, m_challengeLayer {}, m_pageCount {} {}
+DataManager::DataManager() : m_sender {}, m_pageCount {} {}
 
 void DataManager::loadLevels(CCObject* sender, int page){
     m_sender = sender;
@@ -111,7 +112,7 @@ void DataManager::levelDownloadFailed(int response) {
 }
 
 void DataManager::notifyLevelsRestored(bool restored) const {
-    static_cast<ChallengeLayer*>(m_challengeLayer)->onLevelsRestored(restored);
+    Challenge::currentChallengeLayer->onLevelsRestored(restored);
 }
 
 void DataManager::setLevelComplete(size_t n) {
@@ -134,7 +135,7 @@ void DataManager::setLevelComplete(size_t n) {
     saveToDisk();
 
     if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
-        static_cast<ChallengeLayer*>(m_challengeLayer)->unlockButton(static_cast<size_t>(m_data.completedLevels));
+        Challenge::currentChallengeLayer->unlockButton(static_cast<size_t>(m_data.completedLevels));
     }
 }
 
@@ -155,6 +156,6 @@ void DataManager::setLevelSkipped(size_t n) {
     saveToDisk();
 
     if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
-        static_cast<ChallengeLayer*>(m_challengeLayer)->unlockButton(static_cast<size_t>(m_data.completedLevels));
+        Challenge::currentChallengeLayer->unlockButton(static_cast<size_t>(m_data.completedLevels));
     }
 }

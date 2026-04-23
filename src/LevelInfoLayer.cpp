@@ -1,4 +1,5 @@
 #include "ChallengeLayer.hpp"
+#include "Globals.hpp"
 #include "LevelInfoLayer.hpp"
 
 bool ChallengeLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
