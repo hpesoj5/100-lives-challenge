@@ -34,7 +34,6 @@ private:
     ChallengeLayer() = default;
     ~ChallengeLayer();
 
-    BoomScrollLayer* m_scrollLayer;
     DataManager m_dataManager;
 
     MenuBuilder m_actionMenuBuilder;
@@ -42,5 +41,8 @@ private:
     MenuBuilder m_leftMenuBuilder;
     MenuBuilder m_rightMenuBuilder;
 
+    BoomScrollLayer* m_scrollLayer;
+    LevelManagerDelegate* m_prevLMD;
+    LevelDownloadDelegate* m_prevLDD;
     bool m_saveExists;
 };

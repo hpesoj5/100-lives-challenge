@@ -13,11 +13,10 @@ ChallengeLayer* ChallengeLayer::create() {
 }
 
 ChallengeLayer::~ChallengeLayer() {
-    // add a reset button to clear save in the future
-
     if (m_saveExists) m_dataManager.saveToDisk();
 }
 
+// add a reset button to clear save in the future
 bool ChallengeLayer::init() {
     if (!CCLayer::init()) {
         log::error("Failed to initialise CCLayer");
@@ -127,19 +126,29 @@ bool ChallengeLayer::init() {
 void ChallengeLayer::onEnter() {
     CCLayer::onEnter();
 
+
     setTouchEnabled(true);
     setKeyboardEnabled(true);
     setKeypadEnabled(true);
     setMouseEnabled(true);
+
+    m_prevLMD = &m_dataManager;
+    m_prevLDD = &m_dataManager;
+    std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, m_prevLMD);
+    std::swap(GameLevelManager::sharedState()->m_levelDownloadDelegate, m_prevLDD);
 }
 
 void ChallengeLayer::onExit() {
-    CCLayer::onExit();
+
+    std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, m_prevLMD);
+    std::swap(GameLevelManager::sharedState()->m_levelDownloadDelegate, m_prevLDD);
 
     setTouchEnabled(false);
     setKeyboardEnabled(false);
     setKeypadEnabled(false);
     setMouseEnabled(false);
+
+    CCLayer::onExit();
 }
 
 void ChallengeLayer::keyDown(enumKeyCodes key, double) {
@@ -177,7 +186,7 @@ void ChallengeLayer::onNewChallenge(CCObject*) {
     createQuickPopup(
         "New Challenge",
         "Start new challenge?\n(Current score will be erased!)",
-        "NO", "YES",
+        "No", "Yes",
         [this](auto, bool btn2) {
             if (btn2) {
                 // try to delete previously saved levels
@@ -205,7 +214,7 @@ void ChallengeLayer::onEnterLevel(CCObject* sender) {
     auto btn { static_cast<CCMenuItemSpriteExtra*>(sender) };
 
     // not gonna make this prettier
-    CCDirector::sharedDirector()->pushScene(CCTransitionFade::create(0.5f, ChallengeLevelInfoLayer::scene(m_dataManager.getLevel(btn->getTag()), false, this, menu_selector(ChallengeLayer::onLevelSkip), btn->getTag(), this->m_dataManager.hasRemainingSkips())));
+    CCDirector::sharedDirector()->pushScene(CCTransitionFade::create(0.5f, ChallengeLevelInfoLayer::scene(m_dataManager.getLevel(btn->getTag()), false, this, btn->getTag(), this->m_dataManager.hasRemainingSkips())));
 }
 
 void ChallengeLayer::onLevelSkip(CCObject* sender) {

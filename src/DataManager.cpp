@@ -3,17 +3,7 @@
 #include "DataManager.hpp"
 #include <algorithm>
 
-DataManager::DataManager() : m_sender {}, m_challengeLayer {}, m_pageCount {} {
-    m_prevLMD = this;
-    m_prevLDD = this;
-    std::swap(m_prevLMD, GameLevelManager::sharedState()->m_levelManagerDelegate);
-    std::swap(m_prevLDD, GameLevelManager::sharedState()->m_levelDownloadDelegate);
-}
-
-DataManager::~DataManager() {
-    std::swap(m_prevLMD, GameLevelManager::sharedState()->m_levelManagerDelegate);
-    std::swap(m_prevLDD, GameLevelManager::sharedState()->m_levelDownloadDelegate);
-}
+DataManager::DataManager() : m_sender {}, m_challengeLayer {}, m_pageCount {} {}
 
 void DataManager::loadLevels(CCObject* sender, int page){
     m_sender = sender;
@@ -57,7 +47,7 @@ void DataManager::resetChallengeData() {
 }
 
 void DataManager::deleteAllLevels() {
-    for (auto& level : m_levels) { 
+    for (auto& level : m_levels) {
         if (level) GameLevelManager::sharedState()->deleteLevel(level.data());
     }
 }
@@ -83,7 +73,7 @@ void DataManager::restoreFromDisk() {
 
     m_bestScore = Mod::get()->getSavedValue<int>("bestScore");
     m_data = Mod::get()->getSavedValue<ChallengeData>("challengeData");
-    
+
     m_levels.clear();
     m_levelsToDownload.clear();
 
@@ -136,7 +126,7 @@ void DataManager::setLevelComplete(size_t n) {
 
     m_data.levelStatus[n] = levelStatusToInt(LevelStatus::completed);
     m_data.completedLevels = std::max(m_data.completedLevels, nInt + 1);
-    
+
     if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
         m_data.levelStatus[static_cast<size_t>(m_data.completedLevels)] = levelStatusToInt(LevelStatus::inProgress);
     }

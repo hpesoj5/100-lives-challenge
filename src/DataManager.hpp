@@ -53,10 +53,9 @@ struct matjson::Serialize<ChallengeData> {
     }
 };
 
-class DataManager final : public LevelManagerDelegate, LevelDownloadDelegate {
+class DataManager final : public LevelManagerDelegate, public LevelDownloadDelegate {
 public:
     DataManager();
-    ~DataManager();
 
     void loadLevels(CCObject* sender, int page);
     void loadLevelsFinished(CCArray* levels, char const* key) override;
@@ -96,8 +95,6 @@ private:
     std::vector<Ref<GJGameLevel>> m_levels;
     CCObject* m_sender;
     CCObject* m_challengeLayer;
-    LevelManagerDelegate* m_prevLMD;
-    LevelDownloadDelegate* m_prevLDD;
     int m_pageCount;
     int m_bestScore;
 };
