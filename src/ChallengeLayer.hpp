@@ -18,6 +18,8 @@ public:
     void keyDown(enumKeyCodes key, double) override;
     void changePage(int page);
 
+    void onPreviousPage(CCObject*);
+    void onNextPage(CCObject*);
     void onNewChallenge(CCObject*);
     void onLoadLevelsFinished();
     void onLoadLevelsFailed();
@@ -37,6 +39,8 @@ private:
 
     MenuBuilder m_actionMenuBuilder;
     MenuBuilder m_exitMenuBuilder;
+    MenuBuilder m_leftMenuBuilder;
+    MenuBuilder m_rightMenuBuilder;
 
     bool m_saveExists;
 };

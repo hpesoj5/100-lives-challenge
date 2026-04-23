@@ -40,15 +40,6 @@ bool ChallengeLayer::init() {
         .zOrder(1)
         .parent(this);
 
-    m_actionMenuBuilder
-        .layout(RowLayout::create())
-        .anchor(0.5f, 0.5f)
-        .position(winSize.width / 2.f, winSize.height * Constants::Menu::ACTION_MENU_POSITION_PERCENT)
-        .ID("action-menu")
-        .zOrder(1)
-        .parent(this);
-
-
     auto backButton { CCMenuItemSpriteExtra::create(
         CCSprite::createWithSpriteFrameName("GJ_arrow_03_001.png"),
         this,
@@ -57,6 +48,13 @@ bool ChallengeLayer::init() {
     backButton->setID("back-button");
     m_exitMenuBuilder.child(backButton, 0);
 
+    m_actionMenuBuilder
+        .layout(RowLayout::create())
+        .anchor(0.5f, 0.5f)
+        .position(winSize.width / 2.f, winSize.height * Constants::Menu::ACTION_MENU_POSITION_PERCENT)
+        .ID("action-menu")
+        .zOrder(1)
+        .parent(this);
 
     auto newChallengeBtn { CCMenuItemSpriteExtra::create(
         ButtonSprite::create("New Challenge"),
@@ -66,6 +64,37 @@ bool ChallengeLayer::init() {
     newChallengeBtn->setID("new-challenge-button");
     m_actionMenuBuilder.child(newChallengeBtn, 0);
 
+    m_leftMenuBuilder
+        .layout(ColumnLayout::create())
+        .anchor(0.5f, 0.5f)
+        .position(Constants::Menu::EXIT_PADDING, winSize.height / 2.f)
+        .ID("left-menu")
+        .zOrder(1)
+        .parent(this);
+
+    auto previousPageSprite { CCSprite::createWithSpriteFrameName("navArrowBtn_001.png") };
+    previousPageSprite->setFlipX(true);
+    auto previousPageBtn { CCMenuItemSpriteExtra::create(
+        previousPageSprite,
+        this,
+        menu_selector(ChallengeLayer::onPreviousPage)
+    ) };
+    m_leftMenuBuilder.child(previousPageBtn, 0);
+
+    m_rightMenuBuilder
+        .layout(ColumnLayout::create())
+        .anchor(0.5f, 0.5f)
+        .position(winSize.width - Constants::Menu::EXIT_PADDING, winSize.height / 2.f)
+        .ID("right-menu")
+        .zOrder(1)
+        .parent(this);
+
+    auto nextPageBtn { CCMenuItemSpriteExtra::create(
+        CCSprite::createWithSpriteFrameName("navArrowBtn_001.png"),
+        this,
+        menu_selector(ChallengeLayer::onNextPage)
+    ) };
+    m_rightMenuBuilder.child(nextPageBtn, 0);
 
     auto pages { CCArray::createWithCapacity(Constants::Challenge::NUM_PAGES) };
 
@@ -134,6 +163,14 @@ void ChallengeLayer::changePage(int page) {
         m_scrollLayer->moveToPageEnded();
     }
     m_scrollLayer->moveToPage(page);
+}
+
+void ChallengeLayer::onPreviousPage(CCObject*) {
+    changePage(m_scrollLayer->m_page - 1);
+}
+
+void ChallengeLayer::onNextPage(CCObject*) {
+    changePage(m_scrollLayer->m_page + 1);
 }
 
 void ChallengeLayer::onNewChallenge(CCObject*) {
