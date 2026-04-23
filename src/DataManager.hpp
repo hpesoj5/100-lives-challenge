@@ -19,6 +19,10 @@ inline constexpr LevelStatus intToLevelStatus(int x) {
     return static_cast<LevelStatus>(x);
 }
 
+inline constexpr int levelStatusToInt(LevelStatus status) {
+    return static_cast<int>(status);
+}
+
 struct ChallengeData {
     std::vector<int> levels { std::vector<int>(Constants::Challenge::NUM_LEVELS) };
     std::vector<int> levelStatus { std::vector<int>(Constants::Challenge::NUM_LEVELS, static_cast<int>(LevelStatus::locked)) };
@@ -73,7 +77,6 @@ public:
     bool hasRemainingSkips() const { return m_data.skips > 0; }
     bool isRunOver() const { return m_data.lives <= 0; }
 
-    // void incrementCompletedLevels() { ++m_data.completedLevels; }
     void resetChallengeData();
     void deleteAllLevels();
     void addLives(int x) { m_data.lives += x; }

@@ -10,7 +10,6 @@ DataManager::DataManager() : m_sender {}, m_challengeLayer {}, m_pageCount {} {
     std::swap(m_prevLDD, GameLevelManager::sharedState()->m_levelDownloadDelegate);
 }
 
-// i'm not setting them to nullptr ever again
 DataManager::~DataManager() {
     std::swap(m_prevLMD, GameLevelManager::sharedState()->m_levelManagerDelegate);
     std::swap(m_prevLDD, GameLevelManager::sharedState()->m_levelDownloadDelegate);
@@ -36,20 +35,22 @@ void DataManager::loadLevelsFinished(cocos2d::CCArray* levels, char const* key) 
     }
     if (m_levels.size() < Constants::Challenge::NUM_LEVELS) loadLevels(m_sender, m_pageCount + 1);
     else {
+        log::info("{} levels loaded!", m_levels.size());
         resetChallengeData();
+        saveToDisk();
         static_cast<ChallengeLayer*>(m_sender)->onLoadLevelsFinished();
     }
 }
 
 void DataManager::loadLevelsFailed(char const* key) {
     log::error("Failed to load levels from: {}", key);
+    static_cast<ChallengeLayer*>(m_sender)->onLoadLevelsFailed();
 }
 
 void DataManager::resetChallengeData() {
     m_data.levelStatus.clear();
-    m_data.levelStatus.resize(Constants::Challenge::NUM_LEVELS, static_cast<int>(LevelStatus::locked));
-    log::debug("Level Status: {}", m_data.levelStatus);
-    m_data.levelStatus.front() = static_cast<int>(LevelStatus::inProgress);
+    m_data.levelStatus.resize(Constants::Challenge::NUM_LEVELS, levelStatusToInt(LevelStatus::locked));
+    m_data.levelStatus.front() = levelStatusToInt(LevelStatus::inProgress);
     m_data.skips = Constants::Challenge::NUM_SKIPS;
     m_data.lives = Constants::Challenge::NUM_LIVES;
     m_data.completedLevels = 0;
@@ -69,8 +70,6 @@ void DataManager::saveToDisk() {
         m_data.levels.push_back(id);
     }
 
-    log::debug("Level IDs: ", m_data.levels);
-
     Mod::get()->setSavedValue<bool>("saveExists", true);
     Mod::get()->setSavedValue<int>("bestScore", m_bestScore);
     Mod::get()->setSavedValue<ChallengeData>("challengeData", m_data);
@@ -84,7 +83,7 @@ void DataManager::restoreFromDisk() {
 
     m_bestScore = Mod::get()->getSavedValue<int>("bestScore");
     m_data = Mod::get()->getSavedValue<ChallengeData>("challengeData");
-    log::debug("Level IDs: ", m_data.levels);
+    
     m_levels.clear();
     m_levelsToDownload.clear();
 
@@ -92,8 +91,6 @@ void DataManager::restoreFromDisk() {
     for (auto i { 0uz }; i < size; ++i) {
         auto level { m_data.levels[i] };
         auto savedLevel { GameLevelManager::sharedState()->getSavedLevel(level) };
-
-        log::debug("Level{}exists:{},CN:{}", i, static_cast<bool>(savedLevel), (savedLevel ? !savedLevel->m_creatorName.empty() : false));
 
         if (savedLevel && !savedLevel->m_creatorName.empty()) m_levels.push_back(Ref<GJGameLevel>(savedLevel));
         else {
@@ -115,7 +112,6 @@ void DataManager::levelDownloadFinished(GJGameLevel* level) {
     if (m_levelsToDownload.empty()) notifyLevelsRestored(true);
 }
 
-// i hope this doesn't permanently break the game
 void DataManager::levelDownloadFailed(int response) {
     log::error("Level download failed. Response: {}", response);
 
@@ -130,21 +126,24 @@ void DataManager::notifyLevelsRestored(bool restored) const {
 
 void DataManager::setLevelComplete(size_t n) {
     int nInt { static_cast<int>(n) };
-    log::debug("n: {}", n);
-    log::debug("Level Status: {}", m_data.levelStatus);
 
-    auto tmp { static_cast<LevelStatus>(m_data.levelStatus[n]) };
+    auto tmp { intToLevelStatus(m_data.levelStatus[n]) };
     if (tmp == LevelStatus::completed) return;
     if (tmp == LevelStatus::skipped) {
-        m_data.levelStatus[n] = static_cast<int>(LevelStatus::completed);
+        m_data.levelStatus[n] = levelStatusToInt(LevelStatus::completed);
         return;
     }
 
-    m_data.levelStatus[n] = static_cast<int>(LevelStatus::completed);
+    m_data.levelStatus[n] = levelStatusToInt(LevelStatus::completed);
     m_data.completedLevels = std::max(m_data.completedLevels, nInt + 1);
-    log::debug("Completed Levels: {}", m_data.completedLevels);
+    
     if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
-        m_data.levelStatus[static_cast<size_t>(m_data.completedLevels)] = static_cast<int>(LevelStatus::inProgress);
+        m_data.levelStatus[static_cast<size_t>(m_data.completedLevels)] = levelStatusToInt(LevelStatus::inProgress);
+    }
+
+    saveToDisk();
+
+    if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
         static_cast<ChallengeLayer*>(m_challengeLayer)->unlockButton(static_cast<size_t>(m_data.completedLevels));
     }
 }
@@ -154,16 +153,18 @@ void DataManager::setLevelSkipped(size_t n) {
     int nInt { static_cast<int>(n) };
 
     decrementSkips();
-    if (static_cast<LevelStatus>(m_data.levelStatus[n]) == LevelStatus::completed) return;
+    if (intToLevelStatus(m_data.levelStatus[n]) == LevelStatus::completed) return;
 
-    m_data.levelStatus[n] = static_cast<int>(LevelStatus::skipped);
+    m_data.levelStatus[n] = levelStatusToInt(LevelStatus::skipped);
     m_data.completedLevels = std::max(m_data.completedLevels, nInt + 1);
 
-    log::debug("Completed Levels: {}", m_data.completedLevels);
+    if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
+        m_data.levelStatus[static_cast<size_t>(m_data.completedLevels)] = levelStatusToInt(LevelStatus::inProgress);
+    }
+
+    saveToDisk();
 
     if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
-        m_data.levelStatus[static_cast<size_t>(m_data.completedLevels)] = static_cast<int>(LevelStatus::inProgress);
-
         static_cast<ChallengeLayer*>(m_challengeLayer)->unlockButton(static_cast<size_t>(m_data.completedLevels));
     }
 }

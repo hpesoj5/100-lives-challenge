@@ -95,10 +95,6 @@ bool ChallengeLayer::init() {
     return true;
 }
 
-void ChallengeLayer::onLevelsRestored(bool restored) {
-    drawLevels(restored);
-}
-
 void ChallengeLayer::onEnter() {
     CCLayer::onEnter();
 
@@ -117,13 +113,16 @@ void ChallengeLayer::onExit() {
     setMouseEnabled(false);
 }
 
-void ChallengeLayer::onExitToMenu(CCObject*) {
-    CCDirector::sharedDirector()->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade);
-}
-
-// doesn't work on its own for some reason, so added case to keyDown
-void ChallengeLayer::keyBackClicked() {
-    onExitToMenu(nullptr);
+void ChallengeLayer::keyDown(enumKeyCodes key, double) {
+    if (key == enumKeyCodes::KEY_Left || key == enumKeyCodes::KEY_ArrowLeft || key == enumKeyCodes::CONTROLLER_Left || key == enumKeyCodes::CONTROLLER_LTHUMBSTICK_LEFT) {
+        changePage(m_scrollLayer->m_page - 1);
+    }
+    else if (key == enumKeyCodes::KEY_Right || key == enumKeyCodes::KEY_ArrowRight || key == enumKeyCodes::CONTROLLER_Right || key == enumKeyCodes::CONTROLLER_LTHUMBSTICK_RIGHT) {
+        changePage(m_scrollLayer->m_page + 1);
+    }
+    else if (key == enumKeyCodes::KEY_Escape || key == enumKeyCodes::CONTROLLER_B) keyBackClicked();
+    // placeholder
+    else if (key == enumKeyCodes::KEY_C) m_dataManager.setLevelComplete(m_dataManager.getCompletedLevels());
 }
 
 // taken from undefined068655, which is taken from LevelSelectLayer
@@ -137,18 +136,6 @@ void ChallengeLayer::changePage(int page) {
     m_scrollLayer->moveToPage(page);
 }
 
-void ChallengeLayer::keyDown(enumKeyCodes key, double) {
-    if (key == enumKeyCodes::KEY_Left || key == enumKeyCodes::KEY_ArrowLeft || key == enumKeyCodes::CONTROLLER_Left || key == enumKeyCodes::CONTROLLER_LTHUMBSTICK_LEFT) {
-        changePage(m_scrollLayer->m_page - 1);
-    }
-    else if (key == enumKeyCodes::KEY_Right || key == enumKeyCodes::KEY_ArrowRight || key == enumKeyCodes::CONTROLLER_Right || key == enumKeyCodes::CONTROLLER_LTHUMBSTICK_RIGHT) {
-        changePage(m_scrollLayer->m_page + 1);
-    }
-    else if (key == enumKeyCodes::KEY_Escape || key == enumKeyCodes::CONTROLLER_B) keyBackClicked();
-    else if (key == enumKeyCodes::KEY_C) m_dataManager.setLevelComplete(m_dataManager.getCompletedLevels());
-    else if (key == enumKeyCodes::KEY_S) m_dataManager.setLevelSkipped(m_dataManager.getCompletedLevels());
-}
-
 void ChallengeLayer::onNewChallenge(CCObject*) {
     createQuickPopup(
         "New Challenge",
@@ -156,9 +143,11 @@ void ChallengeLayer::onNewChallenge(CCObject*) {
         "NO", "YES",
         [this](auto, bool btn2) {
             if (btn2) {
+                // try to delete previously saved levels
                 m_dataManager.deleteAllLevels();
                 m_dataManager.get().clear();
                 m_dataManager.get().reserve(Constants::Challenge::NUM_LEVELS);
+
                 m_dataManager.loadLevels(this, 0);
             }
         }
@@ -171,15 +160,21 @@ void ChallengeLayer::onLoadLevelsFinished() {
     drawLevels(true);
 }
 
+void ChallengeLayer::onLoadLevelsFailed() {
+    // FLAlert
+}
+
 void ChallengeLayer::onEnterLevel(CCObject* sender) {
     auto btn { static_cast<CCMenuItemSpriteExtra*>(sender) };
 
+    // not gonna make this prettier
     CCDirector::sharedDirector()->pushScene(CCTransitionFade::create(0.5f, ChallengeLevelInfoLayer::scene(m_dataManager.getLevel(btn->getTag()), false, this, menu_selector(ChallengeLayer::onLevelSkip), btn->getTag(), this->m_dataManager.hasRemainingSkips())));
 }
 
 void ChallengeLayer::onLevelSkip(CCObject* sender) {
     auto btn { static_cast<CCMenuItemSpriteExtra*>(sender) };
     auto levelIndex { btn->getTag() };
+
     m_dataManager.setLevelSkipped(levelIndex);
     CCDirector::sharedDirector()->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade);
 }

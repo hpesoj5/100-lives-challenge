@@ -13,16 +13,17 @@ public:
     bool init() override;
     void onEnter() override;
     void onExit() override;
-    void onExitToMenu(CCObject*);
-    void keyBackClicked() override;
+    void onExitToMenu(CCObject*) { CCDirector::sharedDirector()->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade); }
+    void keyBackClicked() override { onExitToMenu(nullptr); }
     void keyDown(enumKeyCodes key, double) override;
     void changePage(int page);
 
     void onNewChallenge(CCObject*);
     void onLoadLevelsFinished();
+    void onLoadLevelsFailed();
     void onEnterLevel(CCObject* sender);
     void onLevelSkip(CCObject* sender);
-    void onLevelsRestored(bool restored);
+    void onLevelsRestored(bool restored) { drawLevels(restored); }
     void drawLevels(bool levelsLoaded);
 
     void unlockButton(size_t n);
