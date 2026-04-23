@@ -1,11 +1,13 @@
 #include "ChallengeLayer.hpp"
 #include "Constants.hpp"
+#include "Globals.hpp"
 #include "LevelInfoLayer.hpp"
 
 ChallengeLayer* ChallengeLayer::create() {
     auto challengeLayer { new ChallengeLayer };
     if (challengeLayer && challengeLayer->init()) {
         challengeLayer->autorelease();
+        Challenge::currentChallengeLayer = challengeLayer;
         return challengeLayer;
     }
     CC_SAFE_DELETE(challengeLayer);
@@ -13,6 +15,7 @@ ChallengeLayer* ChallengeLayer::create() {
 }
 
 ChallengeLayer::~ChallengeLayer() {
+    Challenge::currentChallengeLayer = nullptr;
     if (m_saveExists) m_dataManager.saveToDisk();
 }
 
@@ -214,7 +217,9 @@ void ChallengeLayer::onEnterLevel(CCObject* sender) {
     auto btn { static_cast<CCMenuItemSpriteExtra*>(sender) };
 
     // not gonna make this prettier
-    CCDirector::sharedDirector()->pushScene(CCTransitionFade::create(0.5f, ChallengeLevelInfoLayer::scene(m_dataManager.getLevel(btn->getTag()), false, this, btn->getTag(), this->m_dataManager.hasRemainingSkips())));
+    Challenge::currentLevelIndex = btn->getTag();
+    Challenge::skipButtonEnabled = m_dataManager.hasRemainingSkips();
+    CCDirector::sharedDirector()->pushScene(CCTransitionFade::create(0.5f, ChallengeLevelInfoLayer::scene(m_dataManager.getLevel(btn->getTag()), false)));
 }
 
 void ChallengeLayer::onLevelSkip(CCObject* sender) {
