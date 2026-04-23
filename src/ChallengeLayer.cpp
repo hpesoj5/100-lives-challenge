@@ -2,7 +2,7 @@
 #include "Constants.hpp"
 #include "DataManager.hpp"
 #include "Globals.hpp"
-#include "LevelInfoLayer.hpp"
+#include "hooks/LevelInfoLayer.hpp"
 
 ChallengeLayer* ChallengeLayer::create() {
     auto challengeLayer { new ChallengeLayer };
@@ -130,23 +130,13 @@ bool ChallengeLayer::init() {
 void ChallengeLayer::onEnter() {
     CCLayer::onEnter();
 
-
     setTouchEnabled(true);
     setKeyboardEnabled(true);
     setKeypadEnabled(true);
     setMouseEnabled(true);
-
-    m_prevLMD = &DataManager::get();
-    m_prevLDD = &DataManager::get();
-    std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, m_prevLMD);
-    std::swap(GameLevelManager::sharedState()->m_levelDownloadDelegate, m_prevLDD);
 }
 
 void ChallengeLayer::onExit() {
-
-    std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, m_prevLMD);
-    std::swap(GameLevelManager::sharedState()->m_levelDownloadDelegate, m_prevLDD);
-
     setTouchEnabled(false);
     setKeyboardEnabled(false);
     setKeypadEnabled(false);
@@ -218,9 +208,11 @@ void ChallengeLayer::onEnterLevel(CCObject* sender) {
     auto btn { static_cast<CCMenuItemSpriteExtra*>(sender) };
 
     // not gonna make this prettier
-    Challenge::currentLevelIndex = btn->getTag();
+    auto parameters { static_cast<LevelInfo*>(btn->getUserObject()) };
+    Challenge::currentLevelIndex = parameters->index;
+    Challenge::correctLevelID = parameters->ID;
     Challenge::skipButtonEnabled = DataManager::get().hasRemainingSkips();
-    CCDirector::sharedDirector()->pushScene(CCTransitionFade::create(0.5f, ChallengeLevelInfoLayer::scene(DataManager::get().getLevel(btn->getTag()), false)));
+    CCDirector::sharedDirector()->pushScene(CCTransitionFade::create(0.5f, ChallengeLevelInfoLayer::scene(DataManager::get().getLevel(parameters->index), false)));
 }
 
 void ChallengeLayer::onLevelSkip(CCObject* sender) {
@@ -254,7 +246,7 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
         ) };
 
         levelBtn->setID(Constants::Menu::LEVEL_BTN_PREFIX + std::to_string(i));
-        levelBtn->setTag(i);
+        // levelBtn->setTag(i);
         levelBtn->setPosition(contentSize.width * Constants::Menu::LEVEL_BTN_POSITION[(i / 5) % 2][i % 5].x, contentSize.height * Constants::Menu::LEVEL_BTN_POSITION[(i / 5) % 2][i % 5].y);
 
         mainMenu->addChild(levelBtn, 5);
@@ -272,6 +264,7 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
             levelLabel->setPosition(levelBtn->getContentWidth() / 2.f, levelBtn->getContentHeight() * (1.f + Constants::Menu::LEVEL_LABEL_SPACING_PERCENT));
 
             levelBtn->addChild(levelLabel);
+            levelBtn->setUserObject(new LevelInfo { i, DataManager::get().getLevelID(i) });
         }
         else levelBtn->setEnabled(false);
 
@@ -295,7 +288,7 @@ void ChallengeLayer::unlockButton(size_t n) {
         menu_selector(ChallengeLayer::onEnterLevel)
     ) };
     levelBtn->setID(ID);
-    levelBtn->setTag(n);
+    levelBtn->setUserObject(new LevelInfo{ n, DataManager::get().getLevelID(n) });
     levelBtn->setPosition(position);
 
     m_scrollLayer->getPage(page)->getChildByID(pageID)->removeChildByID(ID);

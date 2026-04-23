@@ -9,6 +9,10 @@ DataManager::DataManager() : m_sender {}, m_pageCount {} {}
 void DataManager::loadLevels(CCObject* sender, int page){
     m_sender = sender;
     m_pageCount = page;
+
+    prev_LMD = this;
+    std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, prev_LMD);
+
     auto searchObject = GJSearchObject::create((SearchType::Recent))->getPageObject(page);
     GameLevelManager::sharedState()->getOnlineLevels(searchObject);
 }
@@ -24,6 +28,7 @@ void DataManager::loadLevelsFinished(cocos2d::CCArray* levels, char const* key) 
             )
         );
     }
+    std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, prev_LMD);
     if (m_levels.size() < Constants::Challenge::NUM_LEVELS) loadLevels(m_sender, m_pageCount + 1);
     else {
         log::info("{} levels loaded!", m_levels.size());
@@ -35,6 +40,7 @@ void DataManager::loadLevelsFinished(cocos2d::CCArray* levels, char const* key) 
 
 void DataManager::loadLevelsFailed(char const* key) {
     log::error("Failed to load levels from: {}", key);
+    std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, prev_LMD);
     static_cast<ChallengeLayer*>(m_sender)->onLoadLevelsFailed();
 }
 
@@ -48,12 +54,18 @@ void DataManager::resetChallengeData() {
 }
 
 void DataManager::deleteAllLevels() {
+    prev_LMD = this;
+    std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, prev_LMD);
     for (auto& level : m_levels) {
         if (level) GameLevelManager::sharedState()->deleteLevel(level.data());
     }
+    std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, prev_LMD);
 }
 
 void DataManager::saveToDisk() {
+    prev_LMD = this;
+    std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, prev_LMD);
+
     m_data.levels.clear();
     for (auto const& level : m_levels) {
         auto id { level.data()->m_levelID.value() };
@@ -64,6 +76,8 @@ void DataManager::saveToDisk() {
     Mod::get()->setSavedValue<bool>("saveExists", true);
     Mod::get()->setSavedValue<int>("bestScore", m_bestScore);
     Mod::get()->setSavedValue<ChallengeData>("challengeData", m_data);
+
+    std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, prev_LMD);
 }
 
 void DataManager::restoreFromDisk() {
@@ -71,6 +85,11 @@ void DataManager::restoreFromDisk() {
         notifyLevelsRestored(false);
         return;
     }
+
+    prev_LDD = this;
+    prev_LMD = this;
+    std::swap(GameLevelManager::sharedState()->m_levelDownloadDelegate, prev_LDD);
+    std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, prev_LMD);
 
     m_bestScore = Mod::get()->getSavedValue<int>("bestScore");
     m_data = Mod::get()->getSavedValue<ChallengeData>("challengeData");
@@ -111,7 +130,9 @@ void DataManager::levelDownloadFailed(int response) {
     notifyLevelsRestored(false);
 }
 
-void DataManager::notifyLevelsRestored(bool restored) const {
+void DataManager::notifyLevelsRestored(bool restored) {
+    std::swap(GameLevelManager::sharedState()->m_levelDownloadDelegate, prev_LDD);
+    std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, prev_LMD);
     Challenge::currentChallengeLayer->onLevelsRestored(restored);
 }
 

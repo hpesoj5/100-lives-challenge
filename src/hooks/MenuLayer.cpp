@@ -1,4 +1,4 @@
-#include "ChallengeLayer.hpp"
+#include "../ChallengeLayer.hpp"
 #include <Geode/Geode.hpp>
 #include <Geode/modify/MenuLayer.hpp>
 

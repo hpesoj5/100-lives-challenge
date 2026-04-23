@@ -1,13 +1,24 @@
 #pragma once
 
+#include <Geode/Geode.hpp>
 #include <array>
 #include <string>
 
+using namespace geode::prelude;
 using namespace std::string_literals;
 
 struct Point {
     float x {};
     float y {};
+};
+
+struct LevelInfo : public CCObject {
+    size_t index;
+    int ID;
+
+    LevelInfo(size_t _index, int _ID) : index { _index }, ID { _ID } {
+        autorelease();
+    }
 };
 namespace Constants {
     namespace Menu {

@@ -66,6 +66,7 @@ public:
 
     GJGameLevel* getLevel(size_t index) { return m_levels[index].data(); }
     std::string const& getLevelName(size_t index) const { return m_levels[index]->m_levelName; }
+    int getLevelID(size_t index) const { return m_levels[index]->m_levelID.value(); }
 
     std::vector<Ref<GJGameLevel>>& getLevelVector() { return m_levels; }
     size_t count() const { return m_levels.size(); }
@@ -82,7 +83,7 @@ public:
     void decrementSkips() { if (m_data.skips > 0) --m_data.skips; }
     void saveToDisk();
     void restoreFromDisk();
-    void notifyLevelsRestored(bool restored) const;
+    void notifyLevelsRestored(bool restored);
 
     void setLevelComplete(size_t n);
     void setLevelSkipped(size_t n);
@@ -94,6 +95,8 @@ private:
     std::unordered_map<int, int> m_levelsToDownload;
     std::vector<Ref<GJGameLevel>> m_levels;
     CCObject* m_sender;
+    LevelManagerDelegate* prev_LMD;
+    LevelDownloadDelegate* prev_LDD;
     int m_pageCount;
     int m_bestScore;
 };

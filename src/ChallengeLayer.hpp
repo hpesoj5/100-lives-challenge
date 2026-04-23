@@ -39,7 +39,5 @@ private:
     MenuBuilder m_rightMenuBuilder;
 
     BoomScrollLayer* m_scrollLayer;
-    LevelManagerDelegate* m_prevLMD;
-    LevelDownloadDelegate* m_prevLDD;
     bool m_saveExists;
 };

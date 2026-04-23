@@ -9,4 +9,7 @@ public:
     bool init(GJGameLevel* level, bool challenge);
 
     void onSkipSelect(CCObject* sender);
+
+    void onPlay(CCObject* sender);
+    void onBack(CCObject* sender);
 };
