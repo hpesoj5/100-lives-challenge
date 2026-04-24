@@ -34,11 +34,6 @@ private:
     ChallengeLayer() = default;
     ~ChallengeLayer();
 
-    MenuBuilder m_actionMenuBuilder;
-    MenuBuilder m_exitMenuBuilder;
-    MenuBuilder m_leftMenuBuilder;
-    MenuBuilder m_rightMenuBuilder;
-
     BoomScrollLayer* m_scrollLayer;
     bool m_saveExists;
 };

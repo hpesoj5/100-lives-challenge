@@ -36,7 +36,8 @@ bool ChallengeLayer::init() {
     auto background { createLayerBG() };
     addChild(background, -2);
 
-    m_exitMenuBuilder
+    MenuBuilder exitMenuBuilder;
+    exitMenuBuilder
         .layout(ColumnLayout::create())
         .position(Constants::Menu::EXIT_PADDING, winSize.height - Constants::Menu::EXIT_PADDING)
         .ID("exit-menu")
@@ -49,9 +50,10 @@ bool ChallengeLayer::init() {
         menu_selector(ChallengeLayer::onExitToMenu)
     ) };
     backButton->setID("back-button");
-    m_exitMenuBuilder.child(backButton, 0);
+    exitMenuBuilder.child(backButton, 0);
 
-    m_actionMenuBuilder
+    MenuBuilder actionMenuBuilder;
+    actionMenuBuilder
         .layout(RowLayout::create())
         .anchor(0.5f, 0.5f)
         .position(winSize.width / 2.f, winSize.height * Constants::Menu::ACTION_MENU_POSITION_PERCENT)
@@ -65,9 +67,10 @@ bool ChallengeLayer::init() {
         menu_selector(ChallengeLayer::onNewChallenge)
     ) };
     newChallengeBtn->setID("new-challenge-button");
-    m_actionMenuBuilder.child(newChallengeBtn, 0);
+    actionMenuBuilder.child(newChallengeBtn, 0);
 
-    m_leftMenuBuilder
+    MenuBuilder leftMenuBuilder;
+    leftMenuBuilder
         .layout(ColumnLayout::create())
         .anchor(0.5f, 0.5f)
         .position(Constants::Menu::EXIT_PADDING, winSize.height / 2.f)
@@ -82,9 +85,10 @@ bool ChallengeLayer::init() {
         this,
         menu_selector(ChallengeLayer::onPreviousPage)
     ) };
-    m_leftMenuBuilder.child(previousPageBtn, 0);
+    leftMenuBuilder.child(previousPageBtn, 0);
 
-    m_rightMenuBuilder
+    MenuBuilder rightMenuBuilder;
+    rightMenuBuilder
         .layout(ColumnLayout::create())
         .anchor(0.5f, 0.5f)
         .position(winSize.width - Constants::Menu::EXIT_PADDING, winSize.height / 2.f)
@@ -97,7 +101,8 @@ bool ChallengeLayer::init() {
         this,
         menu_selector(ChallengeLayer::onNextPage)
     ) };
-    m_rightMenuBuilder.child(nextPageBtn, 0);
+    rightMenuBuilder.child(nextPageBtn, 0);
+
 
     auto pages { CCArray::createWithCapacity(Constants::Challenge::NUM_PAGES) };
 
