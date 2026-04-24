@@ -184,6 +184,7 @@ void DataManager::setLevelComplete(size_t n) {
 
     if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
         Challenge::currentChallengeLayer->unlockButton(static_cast<size_t>(m_data.completedLevels));
+        Challenge::currentChallengeLayer->instantChangePage(m_data.completedLevels / 5);
     }
 }
 
@@ -205,5 +206,6 @@ void DataManager::setLevelSkipped(size_t n) {
 
     if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
         Challenge::currentChallengeLayer->unlockButton(static_cast<size_t>(m_data.completedLevels));
+        Challenge::currentChallengeLayer->instantChangePage(m_data.completedLevels / 5);
     }
 }

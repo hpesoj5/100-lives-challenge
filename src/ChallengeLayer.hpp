@@ -16,6 +16,7 @@ public:
     void keyBackClicked() override { onExitToMenu(nullptr); }
     void keyDown(enumKeyCodes key, double) override;
     void changePage(int page);
+    void instantChangePage(int page) { m_scrollLayer->instantMoveToPage(page); }
 
     void onPreviousPage(CCObject*);
     void onNextPage(CCObject*);
