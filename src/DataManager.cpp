@@ -20,7 +20,16 @@ void DataManager::loadLevels(CCObject* sender, int page){
 void DataManager::loadLevelsFinished(cocos2d::CCArray* levels, char const* key) {
     auto size { levels->count() };
     for (auto i { 0u }; i < size; ++i) {
-        if (m_levels.size() < Constants::Challenge::NUM_LEVELS) m_levels.push_back(
+        bool noDuplicate { true };
+        auto ID { static_cast<GJGameLevel*>(levels->objectAtIndex(i))->m_levelID };
+        for (const auto& level : m_levels) {
+            if (level->m_levelID == ID) {
+                noDuplicate = false;
+                break;
+            }
+        }
+
+        if (m_levels.size() < Constants::Challenge::NUM_LEVELS && noDuplicate) m_levels.push_back(
             Ref<GJGameLevel>(
                 static_cast<GJGameLevel*>(
                     levels->objectAtIndex(i)
@@ -28,7 +37,9 @@ void DataManager::loadLevelsFinished(cocos2d::CCArray* levels, char const* key) 
             )
         );
     }
+
     std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, prev_LMD);
+
     if (m_levels.size() < Constants::Challenge::NUM_LEVELS) loadLevels(m_sender, m_pageCount + 1);
     else {
         log::info("{} levels loaded!", m_levels.size());
@@ -56,9 +67,11 @@ void DataManager::resetChallengeData() {
 void DataManager::deleteAllLevels() {
     prev_LMD = this;
     std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, prev_LMD);
+
     for (auto& level : m_levels) {
-        if (level) GameLevelManager::sharedState()->deleteLevel(level.data());
+        if (level) GameLevelManager::sharedState()->deleteLevel(level);
     }
+
     std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, prev_LMD);
 }
 
@@ -69,7 +82,7 @@ void DataManager::saveToDisk() {
     m_data.levels.clear();
     for (auto const& level : m_levels) {
         auto id { level.data()->m_levelID.value() };
-        GameLevelManager::sharedState()->saveLevel(level.data());
+        GameLevelManager::sharedState()->saveLevel(level);
         m_data.levels.push_back(id);
     }
 
@@ -97,27 +110,40 @@ void DataManager::restoreFromDisk() {
     m_levels.clear();
     m_levelsToDownload.clear();
 
+    std::vector<size_t> levelsToDownloadIndex;
+
     auto size { m_data.levels.size() };
     for (auto i { 0uz }; i < size; ++i) {
         auto level { m_data.levels[i] };
+        log::debug("Retrieving level {}", i);
         auto savedLevel { GameLevelManager::sharedState()->getSavedLevel(level) };
 
         if (savedLevel && !savedLevel->m_creatorName.empty()) m_levels.push_back(Ref<GJGameLevel>(savedLevel));
         else {
-            GameLevelManager::sharedState()->downloadLevel(level, false, 0);
-            m_levels.push_back(Ref<GJGameLevel>());
+            log::debug("Downloading level {}", i);
             m_levelsToDownload[level] = i;
+            levelsToDownloadIndex.push_back(level);
+            m_levels.push_back(Ref<GJGameLevel>());
         }
     }
 
     if (m_levelsToDownload.empty()) notifyLevelsRestored(true);
+    else {
+        log::debug("Levels to download: {}", levelsToDownloadIndex.size());
+        for (int level : levelsToDownloadIndex) {
+            log::debug("Downloading level {}", level);
+            GameLevelManager::sharedState()->downloadLevel(level, false, 0);
+        }
+    }
 }
 
 void DataManager::levelDownloadFinished(GJGameLevel* level) {
     if (!m_levelsToDownload.contains(level->m_levelID)) return;
 
+    log::debug("Successfully downloaded level {}: {}", m_levelsToDownload[level->m_levelID], level);
     m_levels[m_levelsToDownload[level->m_levelID]] = level;
     m_levelsToDownload.erase(level->m_levelID);
+    log::debug("{} levels remaining to download", m_levelsToDownload.size());
 
     if (m_levelsToDownload.empty()) notifyLevelsRestored(true);
 }
@@ -133,6 +159,7 @@ void DataManager::levelDownloadFailed(int response) {
 void DataManager::notifyLevelsRestored(bool restored) {
     std::swap(GameLevelManager::sharedState()->m_levelDownloadDelegate, prev_LDD);
     std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, prev_LMD);
+
     Challenge::currentChallengeLayer->onLevelsRestored(restored);
 }
 

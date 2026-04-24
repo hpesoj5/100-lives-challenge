@@ -224,6 +224,7 @@ void ChallengeLayer::onLevelSkip(CCObject* sender) {
 }
 
 void ChallengeLayer::drawLevels(bool levelsLoaded) {
+    log::debug("drawLevels({})", levelsLoaded);
     auto size { Constants::Challenge::NUM_LEVELS };
 
     for (auto i { 0uz }; i < Constants::Challenge::NUM_PAGES; ++i) {
@@ -252,7 +253,9 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
         mainMenu->addChild(levelBtn, 5);
 
         if (levelsLoaded && i <= DataManager::get().getCompletedLevels()) {
+            log::debug("{} {}", i, DataManager::get().getCompletedLevels());
             std::string const& levelName { DataManager::get().getLevelName(i) };
+            log::debug("{}", levelName);
 
             auto levelLabel { CCLabelBMFont::create(
                 levelName.c_str(),
