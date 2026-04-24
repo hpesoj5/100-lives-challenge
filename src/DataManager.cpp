@@ -174,7 +174,7 @@ void DataManager::setLevelComplete(size_t n) {
     }
 
     m_data.levelStatus[n] = levelStatusToInt(LevelStatus::completed);
-    m_data.completedLevels = std::max(m_data.completedLevels, nInt + 1);
+    m_data.completedLevels = std::max(m_data.completedLevels, std::min(Constants::Challenge::NUM_LEVELS, nInt + 1));
 
     if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
         m_data.levelStatus[static_cast<size_t>(m_data.completedLevels)] = levelStatusToInt(LevelStatus::inProgress);
@@ -196,7 +196,7 @@ void DataManager::setLevelSkipped(size_t n) {
     if (intToLevelStatus(m_data.levelStatus[n]) == LevelStatus::completed) return;
 
     m_data.levelStatus[n] = levelStatusToInt(LevelStatus::skipped);
-    m_data.completedLevels = std::max(m_data.completedLevels, nInt + 1);
+    m_data.completedLevels = std::max(m_data.completedLevels, std::min(Constants::Challenge::NUM_LEVELS, nInt + 1));
 
     if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
         m_data.levelStatus[static_cast<size_t>(m_data.completedLevels)] = levelStatusToInt(LevelStatus::inProgress);

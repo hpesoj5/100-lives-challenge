@@ -8,7 +8,7 @@ class MenuBuilder final {
 public:
     MenuBuilder() : m_menu { CCMenu::create() }, m_zOrder{} {}
 
-    MenuBuilder& layout(Layout* layout, bool apply = true, bool respectAnchor = true) { 
+    MenuBuilder& layout(Layout* layout, bool apply = true, bool respectAnchor = true) {
         m_menu->setLayout(layout, apply, respectAnchor);
         return *this;
     }
@@ -71,7 +71,8 @@ public:
     CCPoint getPosition() const { return m_menu->getPosition(); }
     float getContentWidth() const { return m_menu->getContentWidth(); }
     float getContentHeight() const { return m_menu->getContentHeight(); }
-    CCMenu* build() { return m_menu;}
+    CCSize const& getContentSize() const { return m_menu->getContentSize(); }
+    CCMenu* build() { return m_menu; }
     int getZOrder() const { return m_zOrder; }
 
 private:

@@ -2,6 +2,7 @@
 #include "Constants.hpp"
 #include "DataManager.hpp"
 #include "Globals.hpp"
+#include "MenuBuilder.hpp"
 #include "hooks/LevelInfoLayer.hpp"
 
 ChallengeLayer* ChallengeLayer::create() {
@@ -29,12 +30,17 @@ bool ChallengeLayer::init() {
     }
 
     CCTextureCache::sharedTextureCache()->addImage("WorldSheet.png", false);
+    // CCTextureCache::sharedTextureCache()->addImage("game_bg_08_001.png", false);
     CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile("WorldSheet.plist");
 
     auto winSize { CCDirector::sharedDirector()->getWinSize() };
 
-    auto background { createLayerBG() };
-    addChild(background, -2);
+    auto background { CCSprite::create("game_bg_08_001.png") };
+    background->setScale(1.2f);
+    background->setColor(Constants::Menu::BG_COLOR);
+    background->setID("background");
+    background->setPosition(winSize / 2.f);
+    addChild(background, -5);
 
     MenuBuilder exitMenuBuilder;
     exitMenuBuilder
@@ -54,18 +60,18 @@ bool ChallengeLayer::init() {
 
     MenuBuilder actionMenuBuilder;
     actionMenuBuilder
-        .layout(RowLayout::create())
         .anchor(0.5f, 0.5f)
-        .position(winSize.width / 2.f, winSize.height * Constants::Menu::ACTION_MENU_POSITION_PERCENT)
+        .position(winSize.width - Constants::Menu::CORNER_PADDING, Constants::Menu::CORNER_PADDING)
         .ID("action-menu")
         .zOrder(1)
         .parent(this);
 
     auto newChallengeBtn { CCMenuItemSpriteExtra::create(
-        ButtonSprite::create("New Challenge"),
+        CCSprite::createWithSpriteFrameName("GJ_newBtn_001.png"),
         this,
         menu_selector(ChallengeLayer::onNewChallenge)
     ) };
+    newChallengeBtn->setSizeMult(0.9);
     newChallengeBtn->setID("new-challenge-button");
     actionMenuBuilder.child(newChallengeBtn, 0);
 
@@ -103,6 +109,13 @@ bool ChallengeLayer::init() {
     ) };
     rightMenuBuilder.child(nextPageBtn, 0);
 
+    MenuBuilder statsMenuBuilder;
+    statsMenuBuilder
+        .position(winSize.width * 0.825f, winSize.height * 0.825f)
+        .anchor(0.f, 0.f)
+        .ID("stats-menu")
+        .zOrder(1)
+        .parent(this);
 
     auto pages { CCArray::createWithCapacity(Constants::Challenge::NUM_PAGES) };
 
@@ -116,6 +129,21 @@ bool ChallengeLayer::init() {
             .position(0.f, 0.f)
             .zOrder(1)
             .parent(page);
+
+        MenuBuilder backgroundMenu;
+        backgroundMenu
+            .contentSize(winSize)
+            .anchor(0.5f, 0.5f)
+            .ID(Constants::Menu::BG_MENU_PREFIX + std::to_string(i))
+            .position(0.f, 0.f)
+            .zOrder(-4)
+            .parent(page);
+
+        auto island { CCSprite::createWithSpriteFrameName( "worldIsland_01.png") };
+        island->setID(Constants::Menu::BG_ISLAND_PREFIX + std::to_string(i));
+        island->setPosition({ backgroundMenu.getContentWidth() / 2.f, backgroundMenu.getContentHeight() * 0.35f });
+        backgroundMenu.child(island, -3);
+        backgroundMenu.updateLayout();
 
         pages->addObject(page);
     }
@@ -158,8 +186,6 @@ void ChallengeLayer::keyDown(enumKeyCodes key, double) {
         changePage(m_scrollLayer->m_page + 1);
     }
     else if (key == enumKeyCodes::KEY_Escape || key == enumKeyCodes::CONTROLLER_B) keyBackClicked();
-    // placeholder
-    else if (key == enumKeyCodes::KEY_C) DataManager::get().setLevelComplete(DataManager::get().getCompletedLevels());
 }
 
 // taken from undefined068655, which is taken from LevelSelectLayer
@@ -229,6 +255,8 @@ void ChallengeLayer::onLevelSkip(CCObject* sender) {
 }
 
 void ChallengeLayer::drawLevels(bool levelsLoaded) {
+    updateStats();
+
     log::debug("drawLevels({})", levelsLoaded);
     auto size { Constants::Challenge::NUM_LEVELS };
 
@@ -253,7 +281,7 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
 
         levelBtn->setID(Constants::Menu::LEVEL_BTN_PREFIX + std::to_string(i));
         // levelBtn->setTag(i);
-        levelBtn->setPosition(contentSize.width * Constants::Menu::LEVEL_BTN_POSITION[(i / 5) % 2][i % 5].x, contentSize.height * Constants::Menu::LEVEL_BTN_POSITION[(i / 5) % 2][i % 5].y);
+        levelBtn->setPosition(contentSize.width * Constants::Menu::LEVEL_BTN_POSITION[i % 5].x, contentSize.height * Constants::Menu::LEVEL_BTN_POSITION[i % 5].y);
 
         mainMenu->addChild(levelBtn, 5);
 
@@ -284,6 +312,8 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
 }
 
 void ChallengeLayer::unlockButton(size_t n) {
+    updateStats();
+
     std::string ID { Constants::Menu::LEVEL_BTN_PREFIX + std::to_string(n) };
     auto page { n / 5 };
     std::string pageID { Constants::Menu::MAIN_MENU_PREFIX + std::to_string(page) };
@@ -315,4 +345,42 @@ void ChallengeLayer::unlockButton(size_t n) {
 
     levelBtn->addChild(levelLabel);
     m_scrollLayer->getPage(page)->getChildByID(pageID)->updateLayout();
+}
+
+void ChallengeLayer::updateStats() {
+    auto statsMenu { getChildByID("stats-menu") };
+    statsMenu->removeAllChildren();
+
+    std::string scoreString { "Score: " + std::to_string(DataManager::get().getCompletedLevels()) };
+    auto scoreLabel { CCLabelBMFont::create(
+        scoreString.c_str(),
+        "bigFont.fnt"
+    ) };
+    scoreLabel->setScale(Constants::Menu::STATS_LABEL_SCALE);
+    scoreLabel->setAnchorPoint({ 0.f, 0.f });
+    scoreLabel->setPosition(0.f, statsMenu->getContentWidth() * 0.06f);
+
+    std::string livesString { "Lives: " + std::to_string(DataManager::get().getLives()) };
+    auto livesLabel { CCLabelBMFont::create(
+        livesString.c_str(),
+        "bigFont.fnt"
+    ) };
+    livesLabel->setScale(Constants::Menu::STATS_LABEL_SCALE);
+    livesLabel->setAnchorPoint({ 0.f, 0.f });
+    livesLabel->setPosition(0.f, statsMenu->getContentWidth() * 0.03f);
+
+    std::string skipsString { "Skips: " + std::to_string(DataManager::get().getSkips()) };
+    auto skipsLabel { CCLabelBMFont::create(
+        skipsString.c_str(),
+        "bigFont.fnt"
+    ) };
+    skipsLabel->setScale(Constants::Menu::STATS_LABEL_SCALE);
+    skipsLabel->setAnchorPoint({ 0.f, 0.f });
+    skipsLabel->setPosition(0.f, statsMenu->getContentWidth() * 0.f);
+
+    statsMenu->addChild(skipsLabel);
+    statsMenu->addChild(livesLabel);
+    statsMenu->addChild(scoreLabel);
+
+    statsMenu->updateLayout();
 }

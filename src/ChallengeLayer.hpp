@@ -1,6 +1,5 @@
 #pragma once
 
-#include "MenuBuilder.hpp"
 #include <Geode/Geode.hpp>
 
 using namespace geode::prelude;
@@ -29,6 +28,7 @@ public:
     void drawLevels(bool levelsLoaded);
 
     void unlockButton(size_t n);
+    void updateStats();
 
 private:
     ChallengeLayer() = default;

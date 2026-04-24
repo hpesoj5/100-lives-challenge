@@ -40,6 +40,7 @@ void ChallengeLevelInfoLayer::onSkipSelect(CCObject* sender) {
         [this, sender](auto, bool btn2) {
             if (btn2) {
                 Challenge::currentLevelID.pop();
+                Challenge::currentChallengeLayer->updateStats();
                 Challenge::currentChallengeLayer->onLevelSkip(sender);
             }
         }
@@ -54,6 +55,7 @@ void ChallengeLevelInfoLayer::onPlay(CCObject* sender) {
 void ChallengeLevelInfoLayer::onBack(CCObject* sender) {
     if (Challenge::currentChallengeLayer) {
         Challenge::currentLevelID.pop();
+        Challenge::currentChallengeLayer->updateStats();
     }
     LevelInfoLayer::onBack(sender);
 }
