@@ -11,11 +11,16 @@
 	"version": "v1.0.0",
 	"developer": "hpesoj5",
 	"description": "Menu for the 100 Lives Recent Tab Challenge",
-    "links": {
-        "source": "https://github.com/hpesoj5/100-lives-challenge.git"
-    },
+	"links": {
+			"source": "https://github.com/hpesoj5/100-lives-challenge.git"
+	},
+	"resources": {
+		"sprites": [
+			"resources/*.png"
+		]
+	},
 	"dependencies": {
 		"geode.node-ids": ">=v1.23.3"
 	},
-    "tags": ["online", "interface", "content"]
+	"tags": ["online", "interface", "content"]
 }

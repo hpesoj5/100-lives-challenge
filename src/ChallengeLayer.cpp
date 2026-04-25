@@ -4,6 +4,7 @@
 #include "Globals.hpp"
 #include "MenuBuilder.hpp"
 #include "hooks/LevelInfoLayer.hpp"
+#include <Geode/ui/LazySprite.hpp>
 
 ChallengeLayer* ChallengeLayer::create() {
     auto challengeLayer { new ChallengeLayer };
@@ -30,7 +31,6 @@ bool ChallengeLayer::init() {
     }
 
     CCTextureCache::sharedTextureCache()->addImage("WorldSheet.png", false);
-    // CCTextureCache::sharedTextureCache()->addImage("game_bg_08_001.png", false);
     CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile("WorldSheet.plist");
 
     auto winSize { CCDirector::sharedDirector()->getWinSize() };
@@ -41,6 +41,49 @@ bool ChallengeLayer::init() {
     background->setID("background");
     background->setPosition(winSize / 2.f);
     addChild(background, -5);
+
+    MenuBuilder titleMenuBuilder;
+    titleMenuBuilder
+        .ID("title-menu")
+        .position(0.f, 0.f)
+        .contentSize(winSize)
+        .parent(this)
+        .zOrder(-4);
+
+    auto bottomLeftCorner{ CCSprite::createWithSpriteFrameName("gauntletCorner_001.png") };
+    bottomLeftCorner->setID("bottom-left-corner");
+    bottomLeftCorner->setAnchorPoint({ 0.f, 0.f });
+    bottomLeftCorner->setPosition({ 0.f, 0.f });
+
+    auto bottomRightCorner{ CCSprite::createWithSpriteFrameName("gauntletCorner_001.png") };
+    bottomRightCorner->setID("bottom-right-corner");
+    bottomRightCorner->setAnchorPoint({ 1.f, 0.f });
+    bottomRightCorner->setPosition({ winSize.width, 0.f });
+    bottomRightCorner->setFlipX(true);
+
+    auto topLeftCorner{ CCSprite::createWithSpriteFrameName("gauntletCorner_001.png") };
+    topLeftCorner->setID("top-left-corner");
+    topLeftCorner->setAnchorPoint({ 0.f, 1.f });
+    topLeftCorner->setPosition({ 0.f, winSize.height });
+    topLeftCorner->setFlipY(true);
+
+    auto topRightCorner{ CCSprite::createWithSpriteFrameName("gauntletCorner_001.png") };
+    topRightCorner->setID("top-right-corner");
+    topRightCorner->setAnchorPoint({ 1.f, 1.f });
+    topRightCorner->setPosition(winSize);
+    topRightCorner->setFlipX(true);
+    topRightCorner->setFlipY(true);
+
+    auto titleSprite { CCSprite::create("title.png"_spr) };
+    titleSprite->setScale(Constants::Menu::TITLE_SCALE);
+    titleSprite->setPosition({ winSize.width / 2.f, winSize.height * Constants::Menu::TITLE_YPOSITION });
+
+    titleMenuBuilder
+        .child(topLeftCorner, -3)
+        .child(topRightCorner, -3)
+        .child(bottomLeftCorner, -3)
+        .child(bottomRightCorner, -3)
+        .child(titleSprite, -3);
 
     MenuBuilder exitMenuBuilder;
     exitMenuBuilder
@@ -111,8 +154,8 @@ bool ChallengeLayer::init() {
 
     MenuBuilder statsMenuBuilder;
     statsMenuBuilder
-        .position(winSize.width * 0.825f, winSize.height * 0.825f)
-        .anchor(0.f, 0.f)
+        .layout(RowLayout::create()->setGap(winSize.width * Constants::Menu::STATS_MENU_LABEL_GAP)->setDefaultScaleLimits(0.f, 0.75f))
+        .position(winSize.width / 2.f, winSize.height * Constants::Menu::STATS_MENU_YPOSITION)
         .ID("stats-menu")
         .zOrder(1)
         .parent(this);
@@ -141,9 +184,8 @@ bool ChallengeLayer::init() {
 
         auto island { CCSprite::createWithSpriteFrameName( "worldIsland_01.png") };
         island->setID(Constants::Menu::BG_ISLAND_PREFIX + std::to_string(i));
-        island->setPosition({ backgroundMenu.getContentWidth() / 2.f, backgroundMenu.getContentHeight() * 0.35f });
+        island->setPosition({ backgroundMenu.getContentWidth() / 2.f, backgroundMenu.getContentHeight() * Constants::Menu::BG_ISLAND_YPOSITION });
         backgroundMenu.child(island, -3);
-        backgroundMenu.updateLayout();
 
         pages->addObject(page);
     }
@@ -151,6 +193,8 @@ bool ChallengeLayer::init() {
     m_scrollLayer = BoomScrollLayer::create(pages, 0, false);
 
     m_scrollLayer->setPagesIndicatorPosition({ winSize.width / 2.f, winSize.height * Constants::Menu::PAGES_INDICATOR_POSITION_PERCENT });
+    m_scrollLayer->setDotScale(0.f);
+    m_scrollLayer->togglePageIndicators(false);
     m_scrollLayer->setKeypadEnabled(false);
 
     drawLevels(false);
@@ -286,9 +330,7 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
         mainMenu->addChild(levelBtn, 5);
 
         if (levelsLoaded && i <= DataManager::get().getCompletedLevels()) {
-            log::debug("{} {}", i, DataManager::get().getCompletedLevels());
             std::string const& levelName { DataManager::get().getLevelName(i) };
-            log::debug("{}", levelName);
 
             auto levelLabel { CCLabelBMFont::create(
                 levelName.c_str(),
@@ -357,8 +399,8 @@ void ChallengeLayer::updateStats() {
         "bigFont.fnt"
     ) };
     scoreLabel->setScale(Constants::Menu::STATS_LABEL_SCALE);
-    scoreLabel->setAnchorPoint({ 0.f, 0.f });
-    scoreLabel->setPosition(0.f, statsMenu->getContentWidth() * 0.06f);
+    // scoreLabel->setAnchorPoint({ 0.f, 0.f });
+    // scoreLabel->setPosition(0.f, statsMenu->getContentWidth() * 0.06f);
 
     std::string livesString { "Lives: " + std::to_string(DataManager::get().getLives()) };
     auto livesLabel { CCLabelBMFont::create(
@@ -366,8 +408,8 @@ void ChallengeLayer::updateStats() {
         "bigFont.fnt"
     ) };
     livesLabel->setScale(Constants::Menu::STATS_LABEL_SCALE);
-    livesLabel->setAnchorPoint({ 0.f, 0.f });
-    livesLabel->setPosition(0.f, statsMenu->getContentWidth() * 0.03f);
+    // livesLabel->setAnchorPoint({ 0.f, 0.f });
+    // livesLabel->setPosition(0.f, statsMenu->getContentWidth() * 0.03f);
 
     std::string skipsString { "Skips: " + std::to_string(DataManager::get().getSkips()) };
     auto skipsLabel { CCLabelBMFont::create(
@@ -375,12 +417,16 @@ void ChallengeLayer::updateStats() {
         "bigFont.fnt"
     ) };
     skipsLabel->setScale(Constants::Menu::STATS_LABEL_SCALE);
-    skipsLabel->setAnchorPoint({ 0.f, 0.f });
-    skipsLabel->setPosition(0.f, statsMenu->getContentWidth() * 0.f);
+    // skipsLabel->setAnchorPoint({ 0.f, 0.f });
+    // skipsLabel->setPosition(0.f, statsMenu->getContentWidth() * 0.f);
 
-    statsMenu->addChild(skipsLabel);
-    statsMenu->addChild(livesLabel);
     statsMenu->addChild(scoreLabel);
+    statsMenu->addChild(livesLabel);
+    statsMenu->addChild(skipsLabel);
+
+    scoreLabel->setScale(Constants::Menu::STATS_LABEL_SCALE);
+    livesLabel->setScale(Constants::Menu::STATS_LABEL_SCALE);
+    skipsLabel->setScale(Constants::Menu::STATS_LABEL_SCALE);
 
     statsMenu->updateLayout();
 }

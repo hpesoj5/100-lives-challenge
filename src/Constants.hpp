@@ -44,14 +44,21 @@ namespace Constants {
 
         inline constexpr float PAGES_INDICATOR_POSITION_PERCENT { 0.075f };
 
-        inline constexpr float BG_ISLAND_YPOSITION { 0.35f };
+        inline constexpr float BG_ISLAND_YPOSITION { 0.4f };
         inline constexpr std::array<Point, 5> LEVEL_BTN_POSITION {
-            Point{ 0.2, 0.4f },
-            Point{ 0.36f, 0.36f },
-            Point{ 0.475f, 0.5f },
-            Point{ 0.61f, 0.38f },
-            Point{ 0.78f, 0.47f }
+            Point{ 0.2, BG_ISLAND_YPOSITION + 0.05f },
+            Point{ 0.36f, BG_ISLAND_YPOSITION + 0.01f} ,
+            Point{ 0.475f, BG_ISLAND_YPOSITION + 0.15f },
+            Point{ 0.61f, BG_ISLAND_YPOSITION + 0.03f },
+            Point{ 0.78f, BG_ISLAND_YPOSITION + 0.12f }
         };
+
+        // image is 1729 x 129
+        inline constexpr float TITLE_SCALE { 1.1f };
+        inline constexpr float TITLE_YPOSITION { 0.82f };
+
+        inline constexpr float STATS_MENU_YPOSITION { 0.08f };
+        inline constexpr float STATS_MENU_LABEL_GAP { 0.1f };
     }
 
     namespace Challenge {

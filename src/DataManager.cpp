@@ -115,12 +115,12 @@ void DataManager::restoreFromDisk() {
     auto size { m_data.levels.size() };
     for (auto i { 0uz }; i < size; ++i) {
         auto level { m_data.levels[i] };
-        log::debug("Retrieving level {}", i);
+        log::info("Retrieving level {} with ID {}", i, level);
         auto savedLevel { GameLevelManager::sharedState()->getSavedLevel(level) };
 
         if (savedLevel && !savedLevel->m_creatorName.empty()) m_levels.push_back(Ref<GJGameLevel>(savedLevel));
         else {
-            log::debug("Downloading level {}", i);
+            log::debug("Could not retrieve level {} with ID {}. Downloading from online levels...", i, level);
             m_levelsToDownload[level] = i;
             levelsToDownloadIndex.push_back(level);
             m_levels.push_back(Ref<GJGameLevel>());
@@ -140,7 +140,7 @@ void DataManager::restoreFromDisk() {
 void DataManager::levelDownloadFinished(GJGameLevel* level) {
     if (!m_levelsToDownload.contains(level->m_levelID)) return;
 
-    log::debug("Successfully downloaded level {}: {}", m_levelsToDownload[level->m_levelID], level);
+    log::info("Successfully downloaded level {}: {}", m_levelsToDownload[level->m_levelID], level);
     m_levels[m_levelsToDownload[level->m_levelID]] = level;
     m_levelsToDownload.erase(level->m_levelID);
     log::debug("{} levels remaining to download", m_levelsToDownload.size());
