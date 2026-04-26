@@ -58,7 +58,7 @@ namespace Constants {
         inline constexpr float TITLE_YPOSITION { 0.82f };
 
         inline constexpr float STATS_MENU_YPOSITION { 0.08f };
-        inline constexpr float STATS_MENU_LABEL_GAP { 0.1f };
+        inline constexpr float STATS_MENU_LABEL_GAP { 0.08f };
     }
 
     namespace Challenge {

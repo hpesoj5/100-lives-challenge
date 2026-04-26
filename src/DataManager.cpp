@@ -56,12 +56,7 @@ void DataManager::loadLevelsFailed(char const* key) {
 }
 
 void DataManager::resetChallengeData() {
-    m_data.levelStatus.clear();
-    m_data.levelStatus.resize(Constants::Challenge::NUM_LEVELS, levelStatusToInt(LevelStatus::locked));
-    m_data.levelStatus.front() = levelStatusToInt(LevelStatus::inProgress);
-    m_data.skips = Constants::Challenge::NUM_SKIPS;
-    m_data.lives = Constants::Challenge::NUM_LIVES;
-    m_data.completedLevels = 0;
+    m_data = {};
 }
 
 void DataManager::deleteAllLevels() {
@@ -94,11 +89,6 @@ void DataManager::saveToDisk() {
 }
 
 void DataManager::restoreFromDisk() {
-    if (!Mod::get()->getSavedValue<bool>("saveExists")) {
-        notifyLevelsRestored(false);
-        return;
-    }
-
     prev_LDD = this;
     prev_LMD = this;
     std::swap(GameLevelManager::sharedState()->m_levelDownloadDelegate, prev_LDD);
@@ -106,6 +96,11 @@ void DataManager::restoreFromDisk() {
 
     m_bestScore = Mod::get()->getSavedValue<int>("bestScore");
     m_data = Mod::get()->getSavedValue<ChallengeData>("challengeData");
+
+    if (!Mod::get()->getSavedValue<bool>("saveExists")) {
+        notifyLevelsRestored(false);
+        return;
+    }
 
     m_levels.clear();
     m_levelsToDownload.clear();
@@ -150,10 +145,14 @@ void DataManager::levelDownloadFinished(GJGameLevel* level) {
 
 void DataManager::levelDownloadFailed(int response) {
     log::error("Level download failed. Response: {}", response);
-
+    DataManager::get().updateBestScore(DataManager::get().getCompletedLevels());
     // add an alert layer here
-
     notifyLevelsRestored(false);
+    queueInMainThread([](){ FLAlertLayer::create(
+        "Error",
+        "A level in the list could not be restored. As a result, the run will be reset, but your score will be saved.",
+        "OK"
+    )->show(); });
 }
 
 void DataManager::notifyLevelsRestored(bool restored) {
@@ -163,9 +162,12 @@ void DataManager::notifyLevelsRestored(bool restored) {
     Challenge::currentChallengeLayer->onLevelsRestored(restored);
 }
 
-void DataManager::setLevelComplete(size_t n) {
+void DataManager::setLevelComplete(size_t n, int numCoins) {
+    if (n >= Constants::Challenge::NUM_LEVELS || m_data.isRunOver) return;
     int nInt { static_cast<int>(n) };
 
+    addLives(numCoins - m_data.levelCoins[n]);
+    m_data.levelCoins[n] = numCoins;
     auto tmp { intToLevelStatus(m_data.levelStatus[n]) };
     if (tmp == LevelStatus::completed) return;
     if (tmp == LevelStatus::skipped) {
@@ -175,6 +177,7 @@ void DataManager::setLevelComplete(size_t n) {
 
     m_data.levelStatus[n] = levelStatusToInt(LevelStatus::completed);
     m_data.completedLevels = std::max(m_data.completedLevels, std::min(Constants::Challenge::NUM_LEVELS, nInt + 1));
+    updateBestScore(m_data.completedLevels);
 
     if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
         m_data.levelStatus[static_cast<size_t>(m_data.completedLevels)] = levelStatusToInt(LevelStatus::inProgress);
@@ -186,10 +189,15 @@ void DataManager::setLevelComplete(size_t n) {
         Challenge::currentChallengeLayer->unlockButton(static_cast<size_t>(m_data.completedLevels));
         Challenge::currentChallengeLayer->instantChangePage(m_data.completedLevels / 5);
     }
+    else if (m_data.completedLevels > nInt && m_data.completedLevels == Constants::Challenge::NUM_LEVELS) {
+        Challenge::currentChallengeLayer->updateStats();
+        m_data.isRunWon = true;
+        saveToDisk();
+    }
 }
 
 void DataManager::setLevelSkipped(size_t n) {
-    if (!hasRemainingSkips()) return;
+    if (n >= Constants::Challenge::NUM_LEVELS || m_data.isRunOver || !hasRemainingSkips()) return;
     int nInt { static_cast<int>(n) };
 
     decrementSkips();
@@ -197,6 +205,7 @@ void DataManager::setLevelSkipped(size_t n) {
 
     m_data.levelStatus[n] = levelStatusToInt(LevelStatus::skipped);
     m_data.completedLevels = std::max(m_data.completedLevels, std::min(Constants::Challenge::NUM_LEVELS, nInt + 1));
+    updateBestScore(m_data.completedLevels);
 
     if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
         m_data.levelStatus[static_cast<size_t>(m_data.completedLevels)] = levelStatusToInt(LevelStatus::inProgress);
@@ -208,4 +217,21 @@ void DataManager::setLevelSkipped(size_t n) {
         Challenge::currentChallengeLayer->unlockButton(static_cast<size_t>(m_data.completedLevels));
         Challenge::currentChallengeLayer->instantChangePage(m_data.completedLevels / 5);
     }
+    else if (m_data.completedLevels > nInt && m_data.completedLevels == Constants::Challenge::NUM_LEVELS) {
+        Challenge::currentChallengeLayer->updateStats();
+        m_data.isRunWon = true;
+        saveToDisk();
+    }
+}
+
+bool DataManager::rewardLevelSkip(size_t n) {
+    if (intToLevelStatus(m_data.levelStatus[n]) == LevelStatus::completed || intToLevelStatus(m_data.levelStatus[n]) == LevelStatus::skipped) return false;
+    if (m_data.skipGiven[n]) return false;
+
+    ++m_data.skips;
+    return m_data.skipGiven[n] = true;
+}
+
+void DataManager::updateBestScore(int score) {
+    m_bestScore = std::max(m_bestScore, score);
 }

@@ -14,6 +14,7 @@ namespace Challenge {
     inline int currentLevelIndex { 0 };
     inline std::stack<int, std::vector<int>> currentLevelID {};
     inline int correctLevelID { 0 };
+    inline bool currentLevelDownloadFailed { false };
     inline bool isPlaying { false };
 
     inline ChallengeLayer* currentChallengeLayer { nullptr };

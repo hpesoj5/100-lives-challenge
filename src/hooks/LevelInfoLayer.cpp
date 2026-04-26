@@ -1,4 +1,5 @@
 #include "../ChallengeLayer.hpp"
+#include "../DataManager.hpp"
 #include "../Globals.hpp"
 #include "LevelInfoLayer.hpp"
 
@@ -45,6 +46,31 @@ void ChallengeLevelInfoLayer::onSkipSelect(CCObject* sender) {
             }
         }
     );
+}
+
+void ChallengeLevelInfoLayer::levelDownloadFinished(GJGameLevel* level) {
+    LevelInfoLayer::levelDownloadFinished(level);
+    Challenge::currentLevelDownloadFailed = false;
+}
+
+void ChallengeLevelInfoLayer::levelDownloadFailed(int response) {
+    LevelInfoLayer::levelDownloadFailed(response);
+    if (Challenge::currentChallengeLayer && Challenge::currentLevelID.top() == Challenge::correctLevelID) {
+        Challenge::currentLevelDownloadFailed = true;
+    }
+}
+
+void ChallengeLevelInfoLayer::onEnterTransitionDidFinish() {
+    LevelInfoLayer::onEnterTransitionDidFinish();
+    if (Challenge::currentChallengeLayer && Challenge::currentLevelID.top() == Challenge::correctLevelID && Challenge::currentLevelDownloadFailed) {
+        if (DataManager::get().rewardLevelSkip(Challenge::currentLevelIndex)) {
+            queueInMainThread([](){ FLAlertLayer::create(
+                "Download Failed",
+                "Because the level could not be downloaded, you will receive an extra skip.",
+                "OK"
+            )->show(); });
+        }
+    }
 }
 
 void ChallengeLevelInfoLayer::onPlay(CCObject* sender) {

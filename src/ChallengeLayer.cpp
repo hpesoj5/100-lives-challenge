@@ -4,7 +4,7 @@
 #include "Globals.hpp"
 #include "MenuBuilder.hpp"
 #include "hooks/LevelInfoLayer.hpp"
-#include <Geode/ui/LazySprite.hpp>
+#include <sstream>
 
 ChallengeLayer* ChallengeLayer::create() {
     auto challengeLayer { new ChallengeLayer };
@@ -55,6 +55,14 @@ bool ChallengeLayer::init() {
     bottomLeftCorner->setAnchorPoint({ 0.f, 0.f });
     bottomLeftCorner->setPosition({ 0.f, 0.f });
 
+    auto infoButton { CCMenuItemSpriteExtra::create(
+        CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png"),
+        this,
+        menu_selector(ChallengeLayer::onInfo)
+    ) };
+    infoButton->setID("info-button");
+    infoButton->setPosition(Constants::Menu::EXIT_PADDING, Constants::Menu::EXIT_PADDING);
+
     auto bottomRightCorner{ CCSprite::createWithSpriteFrameName("gauntletCorner_001.png") };
     bottomRightCorner->setID("bottom-right-corner");
     bottomRightCorner->setAnchorPoint({ 1.f, 0.f });
@@ -79,6 +87,7 @@ bool ChallengeLayer::init() {
     titleSprite->setPosition({ winSize.width / 2.f, winSize.height * Constants::Menu::TITLE_YPOSITION });
 
     titleMenuBuilder
+        .child(infoButton, -2)
         .child(topLeftCorner, -3)
         .child(topRightCorner, -3)
         .child(bottomLeftCorner, -3)
@@ -195,7 +204,6 @@ bool ChallengeLayer::init() {
     m_scrollLayer->setPagesIndicatorPosition({ winSize.width / 2.f, winSize.height * Constants::Menu::PAGES_INDICATOR_POSITION_PERCENT });
     m_scrollLayer->setDotScale(0.f);
     m_scrollLayer->togglePageIndicators(false);
-    m_scrollLayer->setKeypadEnabled(false);
 
     drawLevels(false);
     addChild(m_scrollLayer, -1);
@@ -213,13 +221,52 @@ void ChallengeLayer::onEnter() {
     setMouseEnabled(true);
 }
 
+void ChallengeLayer::onEnterTransitionDidFinish() {
+    CCLayer::onEnterTransitionDidFinish();
+
+    if (DataManager::get().isRunOver() && !DataManager::get().isRunOverAlertShown()) {
+        DataManager::get().setRunOverAlertShown();
+        log::debug("Show run over alert");
+        drawLevels(true);
+        queueInMainThread([](){ FLAlertLayer::create(
+            "Challenge Over",
+            "You lost all your lives! You are now free to play any level, but your score will no longer change.",
+            "OK"
+        )->show(); });
+    }
+
+    if (DataManager::get().isRunWon() && !DataManager::get().isRunWonAlertShown()) {
+        DataManager::get().setRunWonAlertShown();
+        log::debug("Show run won alert");
+        queueInMainThread([](){ FLAlertLayer::create(
+            "Challenge Complete",
+            "Congratulations! You cleared all 100 levels!",
+            "OK"
+        )->show(); });
+    }
+}
+
 void ChallengeLayer::onExit() {
+    DataManager::get().saveToDisk();
+
     setTouchEnabled(false);
     setKeyboardEnabled(false);
     setKeypadEnabled(false);
     setMouseEnabled(false);
 
     CCLayer::onExit();
+}
+
+void ChallengeLayer::onInfo(CCObject*) {
+    std::stringstream statsView;
+    statsView << "Current score: " << DataManager::get().getCompletedLevels() << '\n';
+    statsView << "Best score: " << DataManager::get().getBestScore() << '\n';
+
+    FLAlertLayer::create(
+        "Stats",
+        statsView.str(),
+        "OK"
+    )->show();
 }
 
 void ChallengeLayer::keyDown(enumKeyCodes key, double) {
@@ -254,10 +301,11 @@ void ChallengeLayer::onNextPage(CCObject*) {
 void ChallengeLayer::onNewChallenge(CCObject*) {
     createQuickPopup(
         "New Challenge",
-        "Start new challenge?\n(Current score will be erased!)",
+        "Start new challenge?\n(Current score will be saved)",
         "No", "Yes",
         [this](auto, bool btn2) {
             if (btn2) {
+                DataManager::get().updateBestScore(DataManager::get().getCompletedLevels());
                 // try to delete previously saved levels
                 DataManager::get().deleteAllLevels();
                 DataManager::get().getLevelVector().clear();
@@ -299,7 +347,7 @@ void ChallengeLayer::onLevelSkip(CCObject* sender) {
 }
 
 void ChallengeLayer::drawLevels(bool levelsLoaded) {
-    updateStats();
+    if (levelsLoaded) updateStats();
 
     log::debug("drawLevels({})", levelsLoaded);
     auto size { Constants::Challenge::NUM_LEVELS };
@@ -318,7 +366,7 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
         auto contentSize { mainMenu->getContentSize() };
 
         auto levelBtn { CCMenuItemSpriteExtra::create(
-            CCSprite::createWithSpriteFrameName(levelsLoaded && i <= DataManager::get().getCompletedLevels() ? "worldLevelBtn_001.png" : "worldLevelBtn_locked_001.png"),
+            CCSprite::createWithSpriteFrameName(levelsLoaded && (DataManager::get().isRunOver() || i <= DataManager::get().getCompletedLevels()) ? "worldLevelBtn_001.png" : "worldLevelBtn_locked_001.png"),
             this,
             (levelsLoaded ? menu_selector(ChallengeLayer::onEnterLevel) : nullptr)
         ) };
@@ -329,7 +377,7 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
 
         mainMenu->addChild(levelBtn, 5);
 
-        if (levelsLoaded && i <= DataManager::get().getCompletedLevels()) {
+        if (levelsLoaded && (DataManager::get().isRunOver() || i <= DataManager::get().getCompletedLevels())) {
             std::string const& levelName { DataManager::get().getLevelName(i) };
 
             auto levelLabel { CCLabelBMFont::create(
@@ -345,7 +393,6 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
             levelBtn->setUserObject(new LevelInfo { i, DataManager::get().getLevelID(i) });
         }
         else levelBtn->setEnabled(false);
-
     }
 
     for (auto i { 0uz }; i < Constants::Challenge::NUM_PAGES; ++i) {

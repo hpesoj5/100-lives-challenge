@@ -10,8 +10,10 @@ public:
 
     bool init() override;
     void onEnter() override;
+    void onEnterTransitionDidFinish() override;
     void onExit() override;
     void onExitToMenu(CCObject*) { CCDirector::sharedDirector()->popSceneWithTransition(0.5f, PopTransition::kPopTransitionFade); }
+    void onInfo(CCObject*);
     void keyBackClicked() override { onExitToMenu(nullptr); }
     void keyDown(enumKeyCodes key, double) override;
     void changePage(int page);

@@ -10,6 +10,9 @@ public:
 
     void onSkipSelect(CCObject* sender);
 
+    void levelDownloadFinished(GJGameLevel* level);
+    void levelDownloadFailed(int response);
+    void onEnterTransitionDidFinish();
     void onPlay(CCObject* sender);
     void onBack(CCObject* sender);
 };
