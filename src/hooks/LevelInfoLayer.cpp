@@ -25,6 +25,7 @@ bool ChallengeLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
         ) };
         skipButton->setEnabled(Challenge::skipButtonEnabled);
         skipButton->setTag(Challenge::currentLevelIndex);
+        skipButton->setID("skip-button"_spr);
 
         getChildByID("back-menu")->addChild(skipButton);
         getChildByID("back-menu")->updateLayout();
