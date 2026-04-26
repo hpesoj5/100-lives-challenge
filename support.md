@@ -1,2 +1,5 @@
-This file can include information on how users can support you (Ko-Fi or Patreon for example).
-You can also delete this file if you don't need it.
+# Thank You for playing the 100 Lives Challenge!
+
+You can support me via [Paypal](paypal.me/hpesoj5)!
+
+I'm also available on Discord (_hpesoj) and I am open to all feedback!
