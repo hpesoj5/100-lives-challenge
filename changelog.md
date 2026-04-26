@@ -1,2 +1,2 @@
-# 1.0.0-alpha
-- Alpha release.
+# 1.0.0-beta
+- Beta release.
