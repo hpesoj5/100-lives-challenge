@@ -22,11 +22,11 @@ struct LevelInfo : public CCObject {
 };
 namespace Constants {
     namespace Menu {
-        inline constexpr std::string MAIN_MENU_PREFIX { "main-menu-page-"s };
-        inline constexpr std::string BG_MENU_PREFIX { "bg-menu-page-"s };
-        inline constexpr std::string BG_ISLAND_PREFIX { "bg-island-page-"s };
-        inline constexpr std::string LEVEL_BTN_PREFIX { "level-button-"s };
-        inline constexpr std::string LEVEL_LABEL_PREFIX { "level-label-"s };
+        inline const std::string MAIN_MENU_PREFIX { "main-menu-page-"s };
+        inline const std::string BG_MENU_PREFIX { "bg-menu-page-"s };
+        inline const std::string BG_ISLAND_PREFIX { "bg-island-page-"s };
+        inline const std::string LEVEL_BTN_PREFIX { "level-button-"s };
+        inline const std::string LEVEL_LABEL_PREFIX { "level-label-"s };
 
         inline constexpr ccColor3B BG_COLOR { 76, 76, 76, };
         inline constexpr float ACTION_MENU_POSITION_PERCENT { 0.2f };
