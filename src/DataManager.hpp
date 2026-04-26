@@ -95,7 +95,7 @@ public:
     void levelDownloadFailed(int response) override;
 
     GJGameLevel* getLevel(size_t index) { return m_levels[index]; }
-    std::string const& getLevelName(size_t index) const { return m_levels[index]->m_levelName; }
+    std::string getLevelName(size_t index) const { return m_levels[index]->m_levelName; }
     int getLevelID(size_t index) const { return m_levels[index]->m_levelID.value(); }
 
     std::vector<Ref<GJGameLevel>>& getLevelVector() { return m_levels; }

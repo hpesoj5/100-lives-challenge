@@ -378,7 +378,7 @@ void ChallengeLayer::drawLevels(bool levelsLoaded) {
         mainMenu->addChild(levelBtn, 5);
 
         if (levelsLoaded && (DataManager::get().isRunOver() || i <= DataManager::get().getCompletedLevels())) {
-            std::string const& levelName { DataManager::get().getLevelName(i) };
+            std::string const levelName { DataManager::get().getLevelName(i) };
 
             auto levelLabel { CCLabelBMFont::create(
                 levelName.c_str(),
@@ -421,7 +421,7 @@ void ChallengeLayer::unlockButton(size_t n) {
     m_scrollLayer->getPage(page)->getChildByID(pageID)->removeChildByID(ID);
     m_scrollLayer->getPage(page)->getChildByID(pageID)->addChild(levelBtn, 5);
 
-    std::string const& levelName { DataManager::get().getLevelName(n) };
+    std::string const levelName { DataManager::get().getLevelName(n) };
 
     auto levelLabel { CCLabelBMFont::create(
         levelName.c_str(),
