@@ -96,6 +96,7 @@ public:
 
     GJGameLevel* getLevel(size_t index) { return m_levels[index]; }
     std::string getLevelName(size_t index) const { return m_levels[index]->m_levelName; }
+    LevelStatus getLevelStatus(size_t index) const { return intToLevelStatus(m_data.levelStatus[index]); }
     int getLevelID(size_t index) const { return m_levels[index]->m_levelID.value(); }
 
     std::vector<Ref<GJGameLevel>>& getLevelVector() { return m_levels; }
@@ -110,6 +111,7 @@ public:
     bool isRunOverAlertShown() const { return m_data.isRunOverAlertShown; }
     bool isRunWon() const { return m_data.isRunWon; }
     bool isRunWonAlertShown() const { return m_data.isRunWonAlertShown; }
+    bool runExists() const { return m_runExists; }
 
     void resetChallengeData();
     void deleteAllLevels();
@@ -126,6 +128,7 @@ public:
     void restoreFromDisk();
     void notifyLevelsRestored(bool restored);
 
+    void setRunExists(bool exists) { m_runExists = exists; }
     void setLevelComplete(size_t n ,int numCoins);
     void setLevelSkipped(size_t n);
     bool rewardLevelSkip(size_t n);  // returns operation success
@@ -144,4 +147,5 @@ private:
     LevelDownloadDelegate* prev_LDD;
     int m_pageCount;
     int m_bestScore;
+    bool m_runExists;
 };

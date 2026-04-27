@@ -71,6 +71,7 @@ void DataManager::deleteAllLevels() {
 }
 
 void DataManager::saveToDisk() {
+    if (!runExists()) return;
     prev_LMD = this;
     std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, prev_LMD);
 
@@ -81,7 +82,7 @@ void DataManager::saveToDisk() {
         m_data.levels.push_back(id);
     }
 
-    Mod::get()->setSavedValue<bool>("saveExists", true);
+    Mod::get()->setSavedValue<bool>("runExists", m_runExists);
     Mod::get()->setSavedValue<int>("bestScore", m_bestScore);
     Mod::get()->setSavedValue<ChallengeData>("challengeData", m_data);
 
@@ -96,8 +97,9 @@ void DataManager::restoreFromDisk() {
 
     m_bestScore = Mod::get()->getSavedValue<int>("bestScore");
     m_data = Mod::get()->getSavedValue<ChallengeData>("challengeData");
+    m_runExists = Mod::get()->getSavedValue<bool>("runExists");
 
-    if (!Mod::get()->getSavedValue<bool>("saveExists")) {
+    if (!runExists()) {
         notifyLevelsRestored(false);
         return;
     }
@@ -110,7 +112,7 @@ void DataManager::restoreFromDisk() {
     auto size { m_data.levels.size() };
     for (auto i { 0uz }; i < size; ++i) {
         auto level { m_data.levels[i] };
-        log::info("Retrieving level {} with ID {}", i, level);
+        // log::info("Retrieving level {} with ID {}", i, level);
         auto savedLevel { GameLevelManager::sharedState()->getSavedLevel(level) };
 
         if (savedLevel && !savedLevel->m_creatorName.empty()) m_levels.push_back(Ref<GJGameLevel>(savedLevel));
@@ -135,10 +137,10 @@ void DataManager::restoreFromDisk() {
 void DataManager::levelDownloadFinished(GJGameLevel* level) {
     if (!m_levelsToDownload.contains(level->m_levelID)) return;
 
-    log::info("Successfully downloaded level {}: {}", m_levelsToDownload[level->m_levelID], level);
+    // log::info("Successfully downloaded level {}: {}", m_levelsToDownload[level->m_levelID], level);
     m_levels[m_levelsToDownload[level->m_levelID]] = level;
     m_levelsToDownload.erase(level->m_levelID);
-    log::debug("{} levels remaining to download", m_levelsToDownload.size());
+    // log::debug("{} levels remaining to download", m_levelsToDownload.size());
 
     if (m_levelsToDownload.empty()) notifyLevelsRestored(true);
 }
@@ -156,6 +158,7 @@ void DataManager::levelDownloadFailed(int response) {
 }
 
 void DataManager::notifyLevelsRestored(bool restored) {
+    setRunExists(restored);
     std::swap(GameLevelManager::sharedState()->m_levelDownloadDelegate, prev_LDD);
     std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, prev_LMD);
 
@@ -200,8 +203,9 @@ void DataManager::setLevelSkipped(size_t n) {
     if (n >= Constants::Challenge::NUM_LEVELS || m_data.isRunOver || !hasRemainingSkips()) return;
     int nInt { static_cast<int>(n) };
 
+    auto tmp { intToLevelStatus(m_data.levelStatus[n]) };
+    if (tmp == LevelStatus::completed || tmp == LevelStatus::skipped) return;
     decrementSkips();
-    if (intToLevelStatus(m_data.levelStatus[n]) == LevelStatus::completed) return;
 
     m_data.levelStatus[n] = levelStatusToInt(LevelStatus::skipped);
     m_data.completedLevels = std::max(m_data.completedLevels, std::min(Constants::Challenge::NUM_LEVELS, nInt + 1));

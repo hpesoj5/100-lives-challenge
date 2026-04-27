@@ -10,7 +10,6 @@ using namespace geode::prelude;
 class ChallengeLayer;
 
 namespace Challenge {
-    inline bool skipButtonEnabled { false };
     inline int currentLevelIndex { 0 };
     inline std::stack<int, std::vector<int>> currentLevelID {};
     inline int correctLevelID { 0 };
@@ -18,4 +17,6 @@ namespace Challenge {
     inline bool isPlaying { false };
 
     inline ChallengeLayer* currentChallengeLayer { nullptr };
+
+    inline bool inCorrectLevel() { return Challenge::currentChallengeLayer && currentLevelID.size() == 1 && currentLevelID.top() == correctLevelID; }
 }

@@ -20,7 +20,7 @@ ChallengeLayer* ChallengeLayer::create() {
 
 ChallengeLayer::~ChallengeLayer() {
     Challenge::currentChallengeLayer = nullptr;
-    if (m_saveExists) DataManager::get().saveToDisk();
+    DataManager::get().saveToDisk();
 }
 
 // add a reset button to clear save in the future
@@ -319,7 +319,8 @@ void ChallengeLayer::onNewChallenge(CCObject*) {
 
 void ChallengeLayer::onLoadLevelsFinished() {
     m_scrollLayer->instantMoveToPage(0);
-    m_saveExists = true;
+    DataManager::get().setRunExists(true);
+    log::debug("run exists");
     drawLevels(true);
 }
 
@@ -334,7 +335,7 @@ void ChallengeLayer::onEnterLevel(CCObject* sender) {
     auto parameters { static_cast<LevelInfo*>(btn->getUserObject()) };
     Challenge::currentLevelIndex = parameters->index;
     Challenge::correctLevelID = parameters->ID;
-    Challenge::skipButtonEnabled = DataManager::get().hasRemainingSkips();
+    auto levelStatus { DataManager::get().getLevelStatus(Challenge::currentLevelIndex) };
     CCDirector::sharedDirector()->pushScene(CCTransitionFade::create(0.5f, ChallengeLevelInfoLayer::scene(DataManager::get().getLevel(parameters->index), false)));
 }
 

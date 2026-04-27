@@ -11,10 +11,13 @@ bool ChallengeLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
         Challenge::isPlaying = false;
     }
 
-    if (Challenge::currentChallengeLayer && Challenge::currentLevelID.top() == Challenge::correctLevelID) {
+    if (Challenge::inCorrectLevel()) {
+        auto levelStatus { DataManager::get().getLevelStatus(Challenge::currentLevelIndex) };
+        auto skipButtonEnabled { DataManager::get().hasRemainingSkips() && levelStatus != LevelStatus::completed && levelStatus != LevelStatus::skipped };
+        log::debug("Skip button enabled: {}", skipButtonEnabled);
         auto topSprite { CircleButtonSprite::create(
             CCLabelBMFont::create("Skip", "bigFont.fnt"),
-            (Challenge::skipButtonEnabled ? CircleBaseColor::Red : CircleBaseColor::Gray),
+            (skipButtonEnabled ? CircleBaseColor::Red : CircleBaseColor::Gray),
             CircleBaseSize::Medium
         ) };
 
@@ -23,7 +26,7 @@ bool ChallengeLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
             this,
             menu_selector(ChallengeLevelInfoLayer::onSkipSelect)
         ) };
-        skipButton->setEnabled(Challenge::skipButtonEnabled);
+        skipButton->setEnabled(skipButtonEnabled);
         skipButton->setTag(Challenge::currentLevelIndex);
         skipButton->setID("skip-button"_spr);
 

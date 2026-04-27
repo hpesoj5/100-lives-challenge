@@ -4,7 +4,7 @@
 
 void ChallengePlayLayer::levelComplete() {
     PlayLayer::levelComplete();
-    if (Challenge::currentChallengeLayer && Challenge::currentLevelID.top() == Challenge::correctLevelID && !m_isPracticeMode && !m_isTestMode) {
+    if (Challenge::inCorrectLevel() && !m_isPracticeMode && !m_isTestMode) {
         auto areCoinsVerified { m_level->m_coinsVerified.value() };
         auto levelID = m_level->m_levelID;
         auto levelIDStr { std::to_string(levelID) };

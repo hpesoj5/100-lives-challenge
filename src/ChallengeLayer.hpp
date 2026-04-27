@@ -37,5 +37,4 @@ private:
     ~ChallengeLayer();
 
     BoomScrollLayer* m_scrollLayer;
-    bool m_saveExists;
 };
