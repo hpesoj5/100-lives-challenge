@@ -67,3 +67,6 @@ build-*/
 # other files
 *.swp
 notes.md
+
+# personal files
+resources/personal-assets
