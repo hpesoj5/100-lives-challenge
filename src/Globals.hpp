@@ -13,6 +13,7 @@ namespace Challenge {
     inline int currentLevelIndex { 0 };
     inline std::stack<int, std::vector<int>> currentLevelID {};
     inline int correctLevelID { 0 };
+    inline bool legitDownloadFailed { false };
     inline bool currentLevelDownloadFailed { false };
     inline bool isPlaying { false };
 

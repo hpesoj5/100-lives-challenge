@@ -66,7 +66,7 @@ void ChallengeLevelInfoLayer::levelDownloadFailed(int response) {
 
 void ChallengeLevelInfoLayer::onEnterTransitionDidFinish() {
     LevelInfoLayer::onEnterTransitionDidFinish();
-    if (Challenge::currentChallengeLayer && Challenge::currentLevelID.top() == Challenge::correctLevelID && Challenge::currentLevelDownloadFailed) {
+    if (Challenge::currentChallengeLayer && Challenge::currentLevelID.top() == Challenge::correctLevelID && Challenge::currentLevelDownloadFailed && Challenge::legitDownloadFailed) {
         if (DataManager::get().rewardLevelSkip(Challenge::currentLevelIndex)) {
             queueInMainThread([](){ FLAlertLayer::create(
                 "Download Failed",
