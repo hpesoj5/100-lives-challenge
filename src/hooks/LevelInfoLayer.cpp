@@ -20,7 +20,6 @@ bool ChallengeLevelInfoLayer::init(GJGameLevel* level, bool challenge) {
             (skipButtonEnabled ? CircleBaseColor::Red : CircleBaseColor::Gray),
             CircleBaseSize::Medium
         ) };
-
         auto skipButton { CCMenuItemSpriteExtra::create(
             topSprite,
             this,
@@ -66,7 +65,7 @@ void ChallengeLevelInfoLayer::levelDownloadFailed(int response) {
 
 void ChallengeLevelInfoLayer::onEnterTransitionDidFinish() {
     LevelInfoLayer::onEnterTransitionDidFinish();
-    if (Challenge::currentChallengeLayer && Challenge::currentLevelID.top() == Challenge::correctLevelID && Challenge::currentLevelDownloadFailed && Challenge::legitDownloadFailed) {
+    if (Challenge::inCorrectLevel() && !DataManager::get().isRunOver() && Challenge::currentLevelDownloadFailed && Challenge::legitDownloadFailed) {
         if (DataManager::get().rewardLevelSkip(Challenge::currentLevelIndex)) {
             queueInMainThread([](){ FLAlertLayer::create(
                 "Download Failed",

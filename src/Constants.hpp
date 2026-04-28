@@ -5,7 +5,6 @@
 #include <string>
 
 using namespace geode::prelude;
-using namespace std::string_literals;
 
 struct Point {
     float x {};
@@ -22,11 +21,11 @@ struct LevelInfo : public CCObject {
 };
 namespace Constants {
     namespace Menu {
-        inline const std::string MAIN_MENU_PREFIX { "main-menu-page-"s };
-        inline const std::string BG_MENU_PREFIX { "bg-menu-page-"s };
-        inline const std::string BG_ISLAND_PREFIX { "bg-island-page-"s };
-        inline const std::string LEVEL_BTN_PREFIX { "level-button-"s };
-        inline const std::string LEVEL_LABEL_PREFIX { "level-label-"s };
+        inline const std::string MAIN_MENU_PREFIX { "main-menu-page-" };
+        inline const std::string BG_MENU_PREFIX { "bg-menu-page-" };
+        inline const std::string BG_ISLAND_PREFIX { "bg-island-page-" };
+        inline const std::string LEVEL_BTN_PREFIX { "level-button-" };
+        inline const std::string LEVEL_LABEL_PREFIX { "level-label-" };
 
         inline constexpr ccColor3B BG_COLOR { 76, 76, 76, };
         inline constexpr float ACTION_MENU_POSITION_PERCENT { 0.2f };
@@ -65,7 +64,6 @@ namespace Constants {
         inline constexpr int NUM_LEVELS { 100 };
         inline constexpr size_t NUM_PAGES { 20 };
         inline constexpr int NUM_LIVES { 100 };
-        // inline constexpr int NUM_SKIPS { 3 };
-        inline constexpr int NUM_SKIPS { 100 };
+        inline constexpr int NUM_SKIPS { 3 };
     }
 }

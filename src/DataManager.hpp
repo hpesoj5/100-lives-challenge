@@ -87,6 +87,11 @@ class DataManager final : public LevelManagerDelegate, public LevelDownloadDeleg
 public:
     static DataManager& get() { static DataManager dataManager; return dataManager; }
 
+    DataManager(DataManager const& other) = delete;
+    DataManager(DataManager&& other) = delete;
+    DataManager& operator=(DataManager const& other) = delete;
+    DataManager& operator=(DataManager&& other) = delete;
+
     void loadLevels(CCObject* sender, int page);
     void loadLevelsFinished(CCArray* levels, char const* key) override;
     void loadLevelsFailed(char const* key) override;
