@@ -1,6 +1,6 @@
 # Geometry Dash 100 Lives Challenge
 
-<cr>100 levels, 100 lives, how far can you get?</c>
+100 levels, 100 lives, how far can you get?
 
 This mod introduces a new interface for the Recent Tab 100 Lives Challenge.
 
