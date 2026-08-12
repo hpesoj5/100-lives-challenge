@@ -1,9 +1,10 @@
 # 1.0.0
 - Added and revised some challenge rules:
-  - Only 3 practice runs are allowed with no life penalty. Practice mode will be disabled after that.
-  - If the player gets all 3 coins in a level, he will have the option once to get a free skip or practice run.
-  - Skips no longer count towards scores.
+  - [ ] Only 3 practice runs are allowed with no life penalty. Practice mode will be disabled after that.
+  - [ ] If the player gets all 3 coins in a level, he will have the option once to get a free skip or practice run.
+  - [X] Skips no longer count towards scores.
   - Unfortunately, truly impossible levels will consume a skip.
+- [ ] Changed the level retrieval and download system to use manual web request instead of in-game delegates.
 
 # 1.0.0-beta.1
 - Fixed game crash on exiting and reentering without save.

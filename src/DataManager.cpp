@@ -1,13 +1,15 @@
+#include "DataManager.hpp"
+
 #include "ChallengeLayer.hpp"
 #include "Constants.hpp"
-#include "DataManager.hpp"
 #include "Globals.hpp"
+
 #include <algorithm>
 
 DataManager::DataManager() : m_sender {}, m_pageCount {} {}
 
-void DataManager::loadLevels(CCObject* sender, int page){
-    m_sender = sender;
+void DataManager::loadLevels(CCObject* sender, int page) {
+    m_sender    = sender;
     m_pageCount = page;
 
     prev_LMD = this;
@@ -29,13 +31,8 @@ void DataManager::loadLevelsFinished(cocos2d::CCArray* levels, char const* key) 
             }
         }
 
-        if (m_levels.size() < Constants::Challenge::NUM_LEVELS && noDuplicate) m_levels.push_back(
-            Ref<GJGameLevel>(
-                static_cast<GJGameLevel*>(
-                    levels->objectAtIndex(i)
-                )
-            )
-        );
+        if (m_levels.size() < Constants::Challenge::NUM_LEVELS && noDuplicate)
+            m_levels.push_back(Ref<GJGameLevel>(static_cast<GJGameLevel*>(levels->objectAtIndex(i))));
     }
 
     std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, prev_LMD);
@@ -55,9 +52,7 @@ void DataManager::loadLevelsFailed(char const* key) {
     static_cast<ChallengeLayer*>(m_sender)->onLoadLevelsFailed();
 }
 
-void DataManager::resetChallengeData() {
-    m_data = {};
-}
+void DataManager::resetChallengeData() { m_data = {}; }
 
 void DataManager::deleteAllLevels() {
     prev_LMD = this;
@@ -96,7 +91,7 @@ void DataManager::restoreFromDisk() {
     std::swap(GameLevelManager::sharedState()->m_levelManagerDelegate, prev_LMD);
 
     m_bestScore = Mod::get()->getSavedValue<int>("bestScore");
-    m_data = Mod::get()->getSavedValue<ChallengeData>("challengeData");
+    m_data      = Mod::get()->getSavedValue<ChallengeData>("challengeData");
     m_runExists = Mod::get()->getSavedValue<bool>("runExists");
 
     if (!runExists()) {
@@ -147,14 +142,16 @@ void DataManager::levelDownloadFinished(GJGameLevel* level) {
 
 void DataManager::levelDownloadFailed(int response) {
     log::error("Level download failed. Response: {}", response);
-    DataManager::get().updateBestScore(DataManager::get().getCompletedLevels());
+    DataManager::get().updateBestScore(DataManager::get().getScore());
     // add an alert layer here
     notifyLevelsRestored(false);
-    queueInMainThread([](){ FLAlertLayer::create(
-        "Error",
-        "A level in the list could not be restored. As a result, the run will be reset, but your score will be saved.",
-        "OK"
-    )->show(); });
+    queueInMainThread([]() {
+        FLAlertLayer::create("Error",
+                             "A level in the list could not be restored. As a result, the run will be reset, but your "
+                             "score will be saved.",
+                             "OK")
+            ->show();
+    });
 }
 
 void DataManager::notifyLevelsRestored(bool restored) {
@@ -165,77 +162,69 @@ void DataManager::notifyLevelsRestored(bool restored) {
     Challenge::currentChallengeLayer->onLevelsRestored(restored);
 }
 
-void DataManager::setLevelComplete(size_t n, int numCoins) {
-    if (n >= Constants::Challenge::NUM_LEVELS || m_data.isRunOver) return;
-    int nInt { static_cast<int>(n) };
+void DataManager::setLevelComplete(size_t currIdx, int numCoins) {
+    if (currIdx >= Constants::Challenge::NUM_LEVELS || m_data.isRunOver) return;
 
-    addLives(numCoins - m_data.levelCoins[n]);
-    m_data.levelCoins[n] = numCoins;
-    auto tmp { intToLevelStatus(m_data.levelStatus[n]) };
+    addLivesFromCoins(currIdx, numCoins);  // also works if the level is rebeaten with more coins
+
+    auto tmp { intToLevelStatus(m_data.levelStatus[currIdx]) };
     if (tmp == LevelStatus::completed) return;
-    if (tmp == LevelStatus::skipped) {
-        m_data.levelStatus[n] = levelStatusToInt(LevelStatus::completed);
-        return;
-    }
 
-    m_data.levelStatus[n] = levelStatusToInt(LevelStatus::completed);
-    m_data.completedLevels = std::max(m_data.completedLevels, std::min(Constants::Challenge::NUM_LEVELS, nInt + 1));
-    updateBestScore(m_data.completedLevels);
+    setLevelStatus(currIdx, LevelStatus::completed);
 
-    if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
-        m_data.levelStatus[static_cast<size_t>(m_data.completedLevels)] = levelStatusToInt(LevelStatus::inProgress);
-    }
+    ++m_data.score;
+    updateBestScore(m_data.score);
 
+    m_data.nextLevelIdx =
+        std::max(m_data.nextLevelIdx, std::min(Constants::Challenge::NUM_LEVELS, static_cast<int>(currIdx) + 1));
+
+    unlockNextLevel();
     saveToDisk();
+    setCorrectPage();
+    checkRunWon();
+}
 
-    if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
-        Challenge::currentChallengeLayer->unlockButton(static_cast<size_t>(m_data.completedLevels));
-        Challenge::currentChallengeLayer->instantChangePage(m_data.completedLevels / 5);
+void DataManager::setCorrectPage() {
+    if (m_data.nextLevelIdx < Constants::Challenge::NUM_LEVELS) {
+        Challenge::currentChallengeLayer->unlockButton(static_cast<size_t>(m_data.nextLevelIdx));
+        Challenge::currentChallengeLayer->instantChangePage(m_data.nextLevelIdx / 5);
     }
-    else if (m_data.completedLevels > nInt && m_data.completedLevels == Constants::Challenge::NUM_LEVELS) {
+}
+
+void DataManager::checkRunWon() {
+    if (m_data.nextLevelIdx == Constants::Challenge::NUM_LEVELS) {
         Challenge::currentChallengeLayer->updateStats();
         m_data.isRunWon = true;
         saveToDisk();
     }
 }
 
-void DataManager::setLevelSkipped(size_t n) {
-    if (n >= Constants::Challenge::NUM_LEVELS || m_data.isRunOver || !hasRemainingSkips()) return;
-    int nInt { static_cast<int>(n) };
+void DataManager::setLevelSkipped(size_t currIdx) {
+    if (currIdx >= Constants::Challenge::NUM_LEVELS || m_data.isRunOver || !hasRemainingSkips()) return;
 
-    auto tmp { intToLevelStatus(m_data.levelStatus[n]) };
+    auto tmp { intToLevelStatus(m_data.levelStatus[currIdx]) };
     if (tmp == LevelStatus::completed || tmp == LevelStatus::skipped) return;
+
     decrementSkips();
 
-    m_data.levelStatus[n] = levelStatusToInt(LevelStatus::skipped);
-    m_data.completedLevels = std::max(m_data.completedLevels, std::min(Constants::Challenge::NUM_LEVELS, nInt + 1));
-    updateBestScore(m_data.completedLevels);
+    setLevelStatus(currIdx, LevelStatus::skipped);
+    m_data.nextLevelIdx =
+        std::max(m_data.nextLevelIdx, std::min(Constants::Challenge::NUM_LEVELS, static_cast<int>(currIdx) + 1));
 
-    if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
-        m_data.levelStatus[static_cast<size_t>(m_data.completedLevels)] = levelStatusToInt(LevelStatus::inProgress);
-    }
-
+    unlockNextLevel();
     saveToDisk();
-
-    if (m_data.completedLevels > nInt && m_data.completedLevels < Constants::Challenge::NUM_LEVELS) {
-        Challenge::currentChallengeLayer->unlockButton(static_cast<size_t>(m_data.completedLevels));
-        Challenge::currentChallengeLayer->instantChangePage(m_data.completedLevels / 5);
-    }
-    else if (m_data.completedLevels > nInt && m_data.completedLevels == Constants::Challenge::NUM_LEVELS) {
-        Challenge::currentChallengeLayer->updateStats();
-        m_data.isRunWon = true;
-        saveToDisk();
-    }
+    setCorrectPage();
+    checkRunWon();
 }
 
 bool DataManager::rewardLevelSkip(size_t n) {
-    if (intToLevelStatus(m_data.levelStatus[n]) == LevelStatus::completed || intToLevelStatus(m_data.levelStatus[n]) == LevelStatus::skipped) return false;
+    if (intToLevelStatus(m_data.levelStatus[n]) == LevelStatus::completed ||
+        intToLevelStatus(m_data.levelStatus[n]) == LevelStatus::skipped)
+        return false;
     if (m_data.skipGiven[n]) return false;
 
     ++m_data.skips;
     return m_data.skipGiven[n] = true;
 }
 
-void DataManager::updateBestScore(int score) {
-    m_bestScore = std::max(m_bestScore, score);
-}
+void DataManager::updateBestScore(int score) { m_bestScore = std::max(m_bestScore, score); }
